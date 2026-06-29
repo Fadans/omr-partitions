@@ -117,11 +117,27 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
 - **À affiner plus tard** : précision (filtrer gracenotes/artefacts), têtes
   vides vs pleines pour la durée.
 
+### Étape 5b — Descripteurs + plus proche voisin ✅ (briques) ; clef ✅
+- `descriptors.py` : **moments de Hu** (7, invariants translation/échelle/
+  rotation), **histogrammes de projection** (lignes/colonnes rééchantillonnés),
+  ratios allongement/remplissage. → MLRF L1 (descripteurs OCR).
+- `knn.py` : `NearestNeighbor` (k-NN, distances euclidiennes standardisées).
+  → MLRF L3 (matching/plus proche voisin).
+- `dataset.py` : extraction d'un symbole (composante la plus à gauche et haute
+  = clef), prétraitement + suppression portées + segmentation + description.
+- `scripts/clef_experiment.py` : auto-étiquetage par le 1er token `.semantic`
+  (toujours une clef), split 70/30.
+- **Résultats clef (7 classes)** : imprimé propre **99,2 %** (n=800),
+  distordu **91,7 %**. Valide la chaîne descripteurs + k-NN sur données réelles.
+- **À faire en 5b** : silences et altérations (besoin d'étiquetage par position
+  dans la séquence), tête pleine vs vide (pour la durée).
+- **Perf** : `label_components` (Python pur, double boucle) est lent (~0,1 s/img)
+  → à vectoriser ou porter en C++ (WP3).
+
 ### Étapes suivantes (à faire)
-- [ ] **Étape 5b** — `classify.py` : clefs, silences, altérations
-  (descripteurs surface/allongement/Hu + k-NN), et tête pleine vs vide.
-- [ ] **Étape 6** — `decode.py` : hauteur (position/portée) + durée (forme),
-  séquence de notes, export MIDI, branchement sur `evaluate.py`.
+- [ ] **Étape 5b (suite)** — silences, altérations, tête pleine/vide.
+- [ ] **Étape 6** — `decode.py` : hauteur (position/portée + clef) + durée
+  (forme), séquence de notes, export MIDI, branchement sur `evaluate.py`.
 
 ---
 
