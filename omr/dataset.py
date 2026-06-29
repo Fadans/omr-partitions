@@ -15,7 +15,7 @@ def prepared(sample: PrimusSample, distorted: bool = False):
     metrics = estimate_metrics(mask)
     nostaff = remove_staff_lines(mask, metrics)
     comps = segment(nostaff, min_area=metrics.line_height * metrics.line_space)
-    return nostaff, metrics, comps
+    return mask, nostaff, metrics, comps
 
 
 def leftmost_tall(comps: list[Component], metrics: StaffMetrics) -> Component | None:
@@ -31,7 +31,7 @@ def clef_label(sample: PrimusSample) -> str:
 
 
 def clef_descriptor(sample: PrimusSample, distorted: bool = False):
-    nostaff, metrics, comps = prepared(sample, distorted)
+    _, nostaff, metrics, comps = prepared(sample, distorted)
     clef = leftmost_tall(comps, metrics)
     if clef is None:
         return None

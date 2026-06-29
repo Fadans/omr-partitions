@@ -5,6 +5,17 @@ partitions). Binôme Thibault Bourdoiseau & Léo Li.
 
 ---
 
+## ⚠️ À ne pas oublier (actions / soutenance)
+- **Suppression des portées — ES vertical vs horizontal** : l'état de l'art
+  (livrable 1) écrit « ouverture morphologique avec un ES **horizontal** ». Le
+  prototype utilise un ES **vertical** (l'ES horizontal abîme les ligatures,
+  démontré visuellement). Reste une « ouverture morphologique » (TIFO2 §5.3).
+  → **À mentionner en soutenance** comme amélioration justifiée, et **corriger
+  le mot dans l'état de l'art si encore éditable**. Détail dans
+  `CORRESPONDANCE_COURS.md`.
+
+---
+
 ## WP1 — Prise en main et évaluation (état au démarrage)
 
 ### WP1-T1 — État de l'art ✅
@@ -134,10 +145,44 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
 - **Perf** : `label_components` (Python pur, double boucle) est lent (~0,1 s/img)
   → à vectoriser ou porter en C++ (WP3).
 
+### Étape 6 — Décodage + MIDI + évaluation bout-en-bout ✅ (`decode.py`, `midi.py`)
+- `decode.py` :
+  - **Hauteur** : géométrie de portée (`staff_line_rows` sur le masque AVEC
+    lignes → ligne du bas + demi-pas), clef → pitch de référence et ligne
+    (`clef_reference`), position de la tête → nom + octave diatonique.
+  - **Durée** (grossière) : tête pleine/vide (taux de remplissage), présence de
+    hampe (run vertical), de ligature/crochet → ronde/blanche/noire/croche.
+  - `clean_heads` : filtre par hauteur médiane + suppression des chevauchements
+    (enlève gracenotes/fragments/doublons).
+- `midi.py` : **writer Standard MIDI File maison** (pur Python, zéro dépendance
+  → portable C++) : `pitch_to_midi`, `duration_to_ticks` (points gérés),
+  `write_midi`.
+- `scripts/decode_experiment.py` : PA/RA/NA via `note_scores` (livrable 2),
+  clef supposée connue (reconnue à 99 % par ailleurs), + PA diatonique.
+- **Résultats (imprimé propre, n=120)** : PA diatonique **73 %** (médiane 85 %),
+  PA stricte 57 %, RA 31 %, NA 24 %. Sur partition simple (croches/noires) le
+  décodage des hauteurs est ~parfait ; la médiane (85 %) montre que la moyenne
+  est tirée vers le bas par les incipits en notes creuses (cf. limites).
+- **Bugs corrigés** : géométrie calculée par erreur sur le masque sans lignes ;
+  `fill_holes` sur-remplissait les régions fermées des groupes ligaturés
+  (→ remplissage limité aux petits trous).
+
+### Limites connues (honnêtes, à améliorer)
+- **Têtes creuses** (blanches/rondes) : notre suppression de portée (ouverture
+  verticale) casse leur contour quasi-horizontal → mal détectées. Pénalise les
+  incipits en notes longues. Piste : détection par corrélation de gabarit
+  elliptique, ou suppression de portée préservant les contours.
+- **Altérations / armure** : non lues → PA stricte < PA diatonique. Piste :
+  lire l'armure (dièses/bémols après la clef) et appliquer aux lettres.
+- **Durées fines** : croche vs double croche (comptage de ligatures) non
+  distinguées → RA limitée.
+- **Silences** : non décodés (seules les têtes le sont).
+
 ### Étapes suivantes (à faire)
-- [ ] **Étape 5b (suite)** — silences, altérations, tête pleine/vide.
-- [ ] **Étape 6** — `decode.py` : hauteur (position/portée + clef) + durée
-  (forme), séquence de notes, export MIDI, branchement sur `evaluate.py`.
+- [ ] **Étape 5b (suite)** — silences, altérations (armure), tête pleine/vide
+  affinée, intégration du classifieur de clef dans le pipeline complet.
+- [ ] **Amélioration têtes creuses** (gabarit elliptique / corrélation).
+- [ ] **WP3** — portage C++ ; **WP4** — CI, GitLab Pages, issues.
 
 ---
 

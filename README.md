@@ -20,10 +20,16 @@ métriques du WP1. NumPy + Pillow uniquement, pour faciliter le portage C++ (WP3
 
 1. `preprocess.py` — niveaux de gris → médian → binarisation (Otsu / adaptatif). ✅
 2. `io_primus.py` — chargement image + parsing de la vérité-terrain `.semantic`. ✅
-3. `staff.py` — détection et suppression des portées. ⬜
-4. `segment.py` — composantes connexes → symboles. ⬜
-5. `classify.py` — têtes de notes, clefs, silences (descripteurs + k-NN/SVM). ⬜
-6. `decode.py` — position → hauteur, forme → durée → séquence + export MIDI. ⬜
+3. `staff.py` — détection et suppression des portées (ouverture morphologique). ✅
+4. `segment.py` — composantes connexes → symboles. ✅
+5. `morph.py`, `heads.py` — morphologie + détection des têtes (granulométrie). ✅
+6. `descriptors.py`, `knn.py` — descripteurs de forme (Hu, projections) + k-NN. ✅
+7. `decode.py` — position → hauteur (clef), forme → durée → séquence. ✅
+8. `midi.py` — export Standard MIDI File (pur Python). ✅
+
+Reconnaissance de clef : 99 % (propre) / 92 % (distordu). Décodage des hauteurs :
+PA diatonique ~74 % (médiane 85 %) sur l'imprimé. Voir `SUIVI.md` (détails,
+résultats, limites) et `CORRESPONDANCE_COURS.md` (notions de cours mobilisées).
 
 ## Utilisation
 

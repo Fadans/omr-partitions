@@ -8,7 +8,9 @@ from PIL import Image
 
 from .io_primus import PrimusSample, load_gray, list_samples, parse_semantic
 from .preprocess import preprocess
+from .decode import decode
 from .heads import detect_heads
+from .midi import write_midi
 from .segment import Component, segment
 from .staff import estimate_metrics, remove_staff_lines, staff_line_rows
 
@@ -56,6 +58,16 @@ def demo(sample: PrimusSample, out_dir: str) -> None:
         _save_boxes(nostaff, heads, os.path.join(out_dir, f"{sample.sample_id}_{tag}_heads.png"))
         print(f"  [{tag}] interligne={metrics.line_space} épaisseur={metrics.line_height} "
               f"lignes={len(rows)} symboles={len(comps)} têtes={len(heads)}")
+
+        if tag == "clean" and os.path.exists(sample.semantic):
+            with open(sample.semantic, encoding="utf-8") as f:
+                clef = f.read().split()[0]
+            notes = decode(mask, nostaff, metrics, clef)
+            mid = os.path.join(out_dir, f"{sample.sample_id}.mid")
+            write_midi(notes, mid)
+            seq = " ".join(f"{n['pitch']}/{n['duration'][:4]}" for n in notes)
+            print(f"  clef={clef} décodé: {seq}")
+            print(f"  -> {mid}")
 
 
 def main() -> None:

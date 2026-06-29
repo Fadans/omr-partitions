@@ -11,6 +11,10 @@ from .staff import (
 from .segment import Component, label_components, components_from_labels, segment
 from .morph import disk, rect, erode, dilate, opening, closing
 from .heads import fill_holes, detect_heads
+from .descriptors import hu_moments, projection_features, shape_features, describe
+from .knn import NearestNeighbor
+from .decode import decode, clean_heads, clef_reference
+from .midi import write_midi, pitch_to_midi, duration_to_ticks
 
 __all__ = [
     "load_gray",
@@ -39,4 +43,15 @@ __all__ = [
     "closing",
     "fill_holes",
     "detect_heads",
+    "hu_moments",
+    "projection_features",
+    "shape_features",
+    "describe",
+    "NearestNeighbor",
+    "decode",
+    "clean_heads",
+    "clef_reference",
+    "write_midi",
+    "pitch_to_midi",
+    "duration_to_ticks",
 ]
