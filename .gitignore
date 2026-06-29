@@ -1,0 +1,27 @@
+# Données (trop volumineuses, téléchargées séparément)
+base_1/
+base_2/
+*.tgz
+*.tar.gz
+
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# LaTeX
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.log
+*.out
+*.run.xml
+*.toc
+*.synctex.gz
+
+# Sorties locales
+out/
+*.mid

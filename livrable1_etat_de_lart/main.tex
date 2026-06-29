@@ -1,0 +1,88 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Encodage / langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+
+% --- Mise en page compacte (tient en 1 page hors illustrations) ---
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.2em}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\titlespacing*{\subsection}{0pt}{4pt}{1pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{}{0em}{}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+
+\usepackage[backend=biber,style=numeric-comp,sorting=none,maxbibnames=3]{biblatex}
+\addbibresource{references.bib}
+\renewcommand*{\bibfont}{\footnotesize}
+
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\title{\vspace{-1.2cm}\textbf{État de l'art --- Analyse automatique de partitions musicales}}
+
+\author{\normalsize Thibault Bourdoiseau \& Léo Li --- SAE TIFO 1 / TIFO 2 / MLRF}
+\date{\vspace{-8pt}\small \today}
+
+\begin{document}
+\maketitle
+\vspace{-12pt}
+
+\section{Problème et objectif}
+La reconnaissance optique de partitions (OMR) consiste à transformer la photo ou le scan d'une partition
+imprimée en une représentation que l'ordinateur peut exploiter, c'est-à-dire la liste des notes avec leur
+hauteur et leur durée, les clefs et les silences, avec éventuellement un export au format MIDI. La
+littérature de référence \cite{rebelo2012,bainbridge2001,calvo2020} décrit pour cela une chaîne de
+traitement bien établie. Cette chaîne peut être réalisée entièrement avec les notions vues en TIFO 1,
+TIFO 2 et MLRF, et donc sans recourir aux réseaux de neurones.
+
+\section{Chaîne de traitement classique}
+
+\subsection{1. Pré-traitement et binarisation}
+On convertit d'abord l'image en niveaux de gris, puis on atténue le bruit à l'aide d'un filtre médian.
+On sépare ensuite l'encre du papier en binarisant l'image : le seuil est calculé automatiquement par la
+méthode d'Otsu \cite{otsu1979}, que l'on adapte localement lorsque l'éclairage n'est pas uniforme, comme
+sur une photo prise au téléphone. Une ouverture morphologique élimine enfin les petits points de bruit
+qui subsistent.
+
+\subsection{2. Détection et suppression des portées}
+C'est l'étape la plus délicate et la plus étudiée de l'OMR \cite{dalitz2008}, car les lignes de la portée
+traversent les notes et gênent leur reconnaissance. Plusieurs approches sont possibles. On peut compter
+les pixels noirs présents sur chaque ligne de l'image : les cinq lignes d'une portée ressortent alors sous
+la forme de cinq pics réguliers qui les localisent, ce qui revient à utiliser un histogramme. On peut aussi
+mesurer la longueur des suites de pixels noirs et blancs pour estimer l'épaisseur des lignes et l'écart
+entre elles, deux valeurs qui serviront à régler toutes les étapes suivantes. Pour effacer les portées, on
+applique une ouverture morphologique avec un élément structurant horizontal, puis on la soustrait à l'image
+afin de retirer les lignes tout en gardant les notes. Enfin, lorsque les portées sont légèrement courbées
+ou inclinées, la transformée de Hough ou la méthode des chemins stables \cite{cardoso2009} donnent de
+meilleurs résultats.
+
+\subsection{3. Segmentation des symboles}
+Une fois les portées retirées, on regroupe les pixels connectés entre eux pour isoler chaque symbole.
+On distingue ensuite les têtes de notes, les hampes et les barres de ligature grâce à des opérations de
+morphologie mathématique et à l'analyse de la répartition des pixels.
+
+\subsection{4. Détection et classification des symboles}
+Pour repérer les têtes de notes, on peut comparer l'image à un modèle de référence, ou utiliser une
+ouverture morphologique avec un élément structurant de forme ovale. Le fait que la tête soit pleine ou
+vide donne déjà une indication sur la durée de la note. Pour les clefs, les silences et les altérations,
+on décrit chaque forme par quelques mesures caractéristiques comme sa surface, son allongement ou ses
+moments de Hu, puis on confie le classement à un algorithme simple tel que les $k$ plus proches voisins
+ou une machine à vecteurs de support (SVM), vus en MLRF.
+
+\subsection{5. Décodage musical et export}
+La hauteur d'une note se déduit de la position verticale de sa tête par rapport aux lignes de la portée.
+Sa durée se lit à partir du type de tête, pleine ou vide, et de la présence d'une hampe, de ligatures ou
+de points. On reconstitue alors la suite des notes, que l'on peut exporter au format MIDI à l'aide d'une
+bibliothèque comme \texttt{music21} \cite{cuthbert2010}.
+\newpage
+\printbibliography[heading=bibnumbered,title={Références}]
+
+\end{document}

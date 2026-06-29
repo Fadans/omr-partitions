@@ -1,0 +1,81 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Encodage / langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+
+% --- Mise en page compacte ---
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlist{leftmargin=1.4em}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt}{2pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection.}{0.5em}{}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+
+\usepackage[backend=biber,style=numeric-comp,sorting=none,maxbibnames=3]{biblatex}
+\addbibresource{references.bib}
+\renewcommand*{\bibfont}{\footnotesize}
+
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\title{\vspace{-1.2cm}\textbf{Livrable 2 --- Base d'évaluation\\[2pt]
+\large Analyse automatique de partitions musicales (OMR)}}
+
+\author{\normalsize Thibault Bourdoiseau \& Léo Li --- SAE TIFO 1 / TIFO 2 / MLRF}
+\date{\vspace{-8pt}\small \today}
+
+\begin{document}
+\maketitle
+\vspace{-10pt}
+
+Le sujet laisse la base libre. Nous combinons deux bases publiques déjà annotées --- une \textbf{imprimée} et
+une \textbf{manuscrite}, pour comparer la difficulté des deux cas --- complétées par une petite annotation
+manuelle pour les hauteurs et durées.
+
+\section{DeepScoresV2 --- imprimé~\cite{tuggener2020}}
+\textbf{Description.} Grande base de partitions imprimées (typographiées) annotées pour la détection
+d'objets~: pour chaque image, les \textbf{boîtes englobantes étiquetées} de $135$ types de symboles musicaux
+(têtes de notes, clefs, silences, altérations\dots). L'annotation est livrée dans un fichier JSON séparé
+(format type COCO). Elle alimente le critère de \emph{F1 de détection des têtes de notes}. On en prélève un
+sous-ensemble de quelques dizaines d'images, découpé par niveau de difficulté (police propre, bruit,
+déformation).
+
+\textbf{Lien.} \url{https://zenodo.org/records/4012193}
+
+\textbf{Autorisation d'accès.} Licence \textbf{Creative Commons CC BY 4.0}~: réutilisation libre, y compris la
+redistribution, à condition de citer Tuggener et al.~(2020). Téléchargement direct sur Zenodo, sans
+inscription.
+
+\section{MUSCIMA++ --- manuscrit~\cite{hajic2017,fornes2012}}
+\textbf{Description.} $140$ pages de partitions \textbf{manuscrites}, annotées au niveau du symbole~:
+$91\,000$ symboles avec leurs \textbf{boîtes englobantes et leurs classes} (et les relations entre symboles).
+C'est l'équivalent manuscrit de DeepScoresV2~; il alimente le même critère de \emph{F1 de détection}, sur des
+images bien plus difficiles (portées irrégulières, têtes déformées), ce qui permet de mesurer l'écart de
+performance imprimé~/~manuscrit. Les images sont un sous-ensemble de CVC-MUSCIMA~\cite{fornes2012}.
+
+\textbf{Lien.} \url{https://ufal.mff.cuni.cz/muscima}
+
+\textbf{Autorisation d'accès.} Licence \textbf{Creative Commons CC BY-NC-SA 4.0}~: usage recherche / non
+commercial, partage à l'identique, avec citation de Haji\v{c} jr.\ \& Pecina~(2017) et de Fornés et
+al.~(2012).
+
+\section{Annotation manuelle des hauteurs et durées (PA / RA)}
+Les critères de \emph{précision des hauteurs} et de \emph{durées} exigent une vérité-terrain donnant la
+\textbf{mélodie décodée} (suite de notes \texttt{hauteur~+~durée}). Cette information n'est fournie ni par
+DeepScoresV2 ni par MUSCIMA++, qui ne donnent que la position et la classe des symboles~; la déduire des
+annotations reviendrait à réimplémenter le décodage que le système doit justement réaliser (évaluation
+circulaire). Nous constituons donc à la main une \textbf{petite base} de quelques images (prises dans les deux
+bases ci-dessus, imprimées et manuscrites), en saisissant pour chacune la séquence de notes attendue au format
+JSON des outils (\texttt{\{"notes": [\{"pitch": "C4", "duration": "q"\}, \dots]\}}). C'est peu coûteux (lecture
+et saisie, sans tracé de boîtes) et conforme à la recommandation du sujet d'une \emph{petite} base
+d'évaluation.
+
+\printbibliography[heading=bibnumbered,title={Références}]
+
+\end{document}

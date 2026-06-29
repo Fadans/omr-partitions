@@ -1,0 +1,117 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Encodage / langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+
+% --- Mise en page compacte ---
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.2em}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt}{2pt}
+\titlespacing*{\subsection}{0pt}{5pt}{1pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{}{0em}{}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+
+\usepackage[backend=biber,style=numeric-comp,sorting=none,maxbibnames=3]{biblatex}
+\addbibresource{references.bib}
+\renewcommand*{\bibfont}{\footnotesize}
+
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\newcommand{\TP}{\mathrm{TP}}
+\newcommand{\FP}{\mathrm{FP}}
+\newcommand{\FN}{\mathrm{FN}}
+
+\title{\vspace{-1.2cm}\textbf{Livrable 2 --- Choix des méthodes d'évaluation\\[2pt]
+\large Analyse automatique de partitions musicales (OMR)}}
+
+\author{\normalsize Thibault Bourdoiseau \& Léo Li --- SAE TIFO 1 / TIFO 2 / MLRF}
+\date{\vspace{-8pt}\small \today}
+
+\begin{document}
+\maketitle
+\vspace{-10pt}
+
+\section{Contexte}
+Le système à évaluer est une chaîne de reconnaissance optique de partitions (OMR) qui transforme l'image
+d'une partition imprimée --- voire manuscrite, pour éprouver sa robustesse --- en une liste de notes
+(hauteur et durée), exportable au format MIDI~\cite{calvo2020,rebelo2012}. On évalue à \textbf{trois critères numériques complémentaires}, chacun
+ciblant une étape de la chaîne~: la \emph{précision des hauteurs} et la \emph{précision des durées} mesurent
+le décodage musical (le résultat final), tandis que le \emph{F1 de détection} mesure en amont la localisation
+des symboles. Chaque critère compare une \textbf{prédiction} produite par le programme à une
+\textbf{vérité-terrain}. Toutes les métriques sont vues en cours~: la F-mesure (précision/rappel) et la
+distance d'édition sont dans la note~1 de MLRF, l'IoU (indice de Jaccard) en séance~6, et l'évaluation de
+classifieurs en séances~4--5.
+
+\section{Critère 1 --- Précision des hauteurs (Pitch Accuracy)}
+\textbf{Comment se calcule-t-il (critère numérique).} On apparie d'abord la séquence de notes prédite à la
+séquence de référence par \textbf{distance d'édition} (Levenshtein~\cite{levenshtein1966}), puis sur les
+$N$ notes de référence~:
+\[
+\mathrm{PA} = \frac{1}{N}\sum_{i=1}^{N}\mathbf{1}\!\left[\hat h_i = h_i\right]\times 100,
+\]
+où $h_i$ est la hauteur de référence (p.~ex.\ \texttt{C4}) et $\hat h_i$ la hauteur prédite alignée (une note
+non appariée compte comme fausse). Une note est correcte si \emph{nom et octave} coïncident. L'alignement par
+édition (plutôt que position par position) évite qu'une seule note manquée décale toutes les suivantes et
+effondre artificiellement le score.
+\textbf{Ce qu'il caractérise.} La qualité du \emph{décodage vertical}~: lecture de la position de la tête de
+note sur la portée, prise en compte de la clef et des altérations. C'est le critère le plus directement lié à
+l'utilisabilité de l'export MIDI.
+\textbf{Valeur raisonnable.} $\mathrm{PA}>90\,\%$ excellent (usage réel), $75\text{--}90\,\%$ correct
+(prototype fonctionnel), $<75\,\%$ insuffisant (décodage à revoir). Valeurs dans $[0,100]\,\%$.
+
+\section{Critère 2 --- Précision des durées (Rhythm Accuracy) et Note Accuracy}
+\textbf{Comment se calcule-t-il.} Sur le même alignement que le critère~1~:
+\[
+\mathrm{RA} = \frac{1}{N}\sum_{i=1}^{N}\mathbf{1}\!\left[\hat d_i = d_i\right]\times 100,
+\qquad
+\mathrm{NA} = \frac{1}{N}\sum_{i=1}^{N}\mathbf{1}\!\left[\hat h_i = h_i\right]\mathbf{1}\!\left[\hat d_i = d_i\right]\times 100,
+\]
+où $d_i \in \{$ronde, blanche, noire, croche, double croche, \dots$\}$. La \textbf{Note Accuracy} exige
+hauteur \emph{et} durée correctes simultanément~; on a toujours $\mathrm{NA}\le\min(\mathrm{PA},\mathrm{RA})$,
+ce qui en fait un résumé sévère mais fidèle du résultat exploitable.
+\textbf{Ce qu'il caractérise.} La \emph{classification des symboles de durée}~: type de tête (pleine ou vide),
+présence d'une hampe, de ligatures et de points. La RA est souvent plus dure à atteindre que la PA car elle
+dépend de plusieurs étapes successives.
+\textbf{Valeur raisonnable.} Mêmes seuils que la PA ($>90\,\%$ usage réel, $>80\,\%$ prototype). Les erreurs
+de durée sont particulièrement pénalisantes pour le MIDI car elles décalent toutes les notes suivantes dans
+le temps. Valeurs dans $[0,100]\,\%$.
+
+\section{Critère 3 --- F1 de détection des têtes de notes}
+\textbf{Comment se calcule-t-il.} On compare les boîtes englobantes prédites aux boîtes de référence. Une
+détection est un vrai positif ($\TP$) si son recouvrement $\mathrm{IoU}\ge\tau$ avec une boîte de référence
+($\tau=0{,}5$, convention PASCAL VOC~\cite{everingham2010})~; l'appariement est glouton (une référence ne sert
+qu'une fois). Les $\FP$ sont les détections sans correspondance, les $\FN$ les têtes non détectées~:
+\[
+\text{Précision}=\frac{\TP}{\TP+\FP},\qquad
+\text{Rappel}=\frac{\TP}{\TP+\FN},\qquad
+\text{F1}=\frac{2\cdot\text{Préc.}\cdot\text{Rappel}}{\text{Préc.}+\text{Rappel}}.
+\]
+\textbf{Ce qu'il caractérise.} L'étape de \emph{segmentation et de détection} des objets, indépendamment du
+décodage musical. Il sert de diagnostic~: un F1 élevé avec une PA faible indique que les notes sont bien
+localisées mais mal interprétées (clef, position), tandis qu'un F1 faible pointe la détection.
+\textbf{Valeur raisonnable.} $\text{F1}>0{,}80$ attendu pour un prototype, $>0{,}90$ pour un système robuste.
+On rapporte précision et rappel séparément, car ils orientent le réglage de la chaîne (seuils morphologiques,
+filtrage des composantes connexes). Valeurs dans $[0,1]$.
+
+\section{Outils de calcul}
+Les trois critères sont implémentés dans \texttt{tools/metrics.py} (NumPy uniquement, aucune dépendance
+lourde, pour faciliter le portage C++ du WP3)~: \texttt{detection\_f1} (critère~3) renvoie
+précision/rappel/F1 à partir des boîtes~; \texttt{note\_scores} (critères~1--2) renvoie PA, RA et NA à partir
+des deux séquences de notes (alignement par distance d'édition). Le script \texttt{tools/evaluate.py} lit une
+vérité-terrain et une prédiction et affiche les scores. La base d'évaluation est décrite dans le document
+séparé \emph{Livrable~2 --- Base d'évaluation}.
+
+\printbibliography[heading=bibnumbered,title={Références}]
+
+\end{document}

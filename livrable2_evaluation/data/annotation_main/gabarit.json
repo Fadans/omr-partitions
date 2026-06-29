@@ -1,0 +1,10 @@
+{
+  "image": "muscima_w01_p010.png",
+  "notes": [
+    {"pitch": "C4", "duration": "q"},
+    {"pitch": "E4", "duration": "q"},
+    {"pitch": "G4", "duration": "h"},
+    {"pitch": "F4", "duration": "e"},
+    {"pitch": "E4", "duration": "e"}
+  ]
+}
