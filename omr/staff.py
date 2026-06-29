@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .morph import opening, rect
+
 
 @dataclass
 class StaffMetrics:
@@ -56,7 +58,17 @@ def staff_line_rows(mask: np.ndarray, ratio: float = 0.5) -> list[int]:
     return rows
 
 
+def staff_lines_mask(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
+    length = max(3, 2 * metrics.line_space)
+    return opening(mask, rect(1, length))
+
+
 def remove_staff_lines(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
+    height = 2 * metrics.line_height + 1
+    return opening(mask, rect(height, 1))
+
+
+def remove_staff_lines_runlength(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
     out = mask.copy()
     threshold = 2 * metrics.line_height
     h, w = mask.shape

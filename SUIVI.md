@@ -72,10 +72,14 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
   longueurs de runs verticaux (noir = épaisseur, blanc = interligne).
 - `staff_line_rows(mask)` : positions des 5 lignes par projection horizontale
   (pics regroupés). Fiable sur l'imprimé propre.
-- `remove_staff_lines(mask, metrics)` : efface les runs verticaux noirs courts
-  (≤ 2× l'épaisseur) → enlève les lignes tout en gardant hampes, têtes et
-  ligatures (runs verticaux longs). Indépendant de la rectitude des lignes,
-  donc marche aussi sur le `.jpg` distordu.
+- `remove_staff_lines(mask, metrics)` : **ouverture morphologique à ES vertical**
+  (TIFO2 §5.3) — garde les structures plus hautes que l'épaisseur d'une ligne →
+  enlève les lignes tout en gardant hampes, têtes et **ligatures**.
+  `remove_staff_lines_runlength` : variante par runs verticaux (résultat
+  identique). `staff_lines_mask` : isole les lignes par ouverture à ES horizontal.
+- Choix de l'ES **vertical** plutôt qu'horizontal : l'ES horizontal (texte
+  littéral de l'état de l'art) abîme les ligatures (horizontales et longues),
+  vérifié visuellement. Écart documenté dans `CORRESPONDANCE_COURS.md`.
 - Résultats : propre → interligne 15, épaisseur 3, 5 lignes détectées ;
   suppression nette sur propre **et** distordu (validation visuelle).
 - **Limite connue** : `staff_line_rows` (projection horizontale) ne trouve

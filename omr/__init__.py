@@ -4,7 +4,9 @@ from .staff import (
     StaffMetrics,
     estimate_metrics,
     staff_line_rows,
+    staff_lines_mask,
     remove_staff_lines,
+    remove_staff_lines_runlength,
 )
 from .segment import Component, label_components, components_from_labels, segment
 from .morph import disk, rect, erode, dilate, opening, closing
@@ -22,7 +24,9 @@ __all__ = [
     "StaffMetrics",
     "estimate_metrics",
     "staff_line_rows",
+    "staff_lines_mask",
     "remove_staff_lines",
+    "remove_staff_lines_runlength",
     "Component",
     "label_components",
     "components_from_labels",

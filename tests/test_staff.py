@@ -1,6 +1,7 @@
 import numpy as np
 
 from omr.staff import (
+    StaffMetrics,
     estimate_metrics,
     remove_staff_lines,
     staff_line_rows,
@@ -41,3 +42,13 @@ def test_remove_staff_lines_keeps_stem_and_head():
     assert out[24:30, 46:52].any()        # tête conservée
     for r in [10, 18, 34, 42]:            # lignes effacées (hors hampe/tête)
         assert not out[r, :45].any()
+
+
+def test_remove_staff_lines_keeps_beam():
+    m = StaffMetrics(line_height=2, line_space=12)
+    mask = np.zeros((50, 60), dtype=bool)
+    mask[10:12, :] = True            # ligne fine (épaisseur 2)
+    mask[30:36, 5:55] = True         # ligature épaisse (6 px de haut)
+    out = remove_staff_lines(mask, m)
+    assert not out[10:12, :].any()   # ligne supprimée
+    assert out[30:36, 5:55].sum() > 100  # ligature conservée
