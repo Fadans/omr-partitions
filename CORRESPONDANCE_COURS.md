@@ -20,6 +20,7 @@ Le prototype mobilise **uniquement des notions vues en TIFO 1, TIFO 2 et MLRF**
 | `heads.detect_heads` | Granulométrie / ouverture par disque (sélection de blobs ronds) | TIFO2 §12 ; §5.3 |
 | `classify` (étape 5b, à venir) | Descripteurs de forme OCR : moments de Hu, histogrammes de projection, descripteurs de Fourier | MLRF L1 (descripteurs OCR) |
 | `classify` — décision | Plus proche voisin / matching (distance) | MLRF L3 (matching, bruteforce/kD-tree) |
+| `key_signature` / lecture armure | Descripteur de bande (projections) + k-NN ; théorie musicale (ordre fixe des altérations) | MLRF L1/L3 |
 | `metrics.note_scores` | Distance d'édition (Levenshtein) pour l'alignement | MLRF L1 (note 1) |
 | `metrics.detection_f1` | IoU (indice de Jaccard), précision/rappel/F1 | MLRF (évaluation) |
 

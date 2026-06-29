@@ -167,13 +167,32 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
   `fill_holes` sur-remplissait les régions fermées des groupes ligaturés
   (→ remplissage limité aux petits trous).
 
+### Étape 5b (suite) — Lecture de l'armure (altérations) ✅ théorie / ⚠️ détection
+- `key_signature.py` : table tonalités majeures PrIMuS → (type, nombre), ordre
+  fixe des altérations (dièses F C G D A E B ; bémols B E A D G C F),
+  `alteration_map`, `apply_alteration`. Astuce : compter + typer suffit (l'ordre
+  est fixe). Branché dans `decode(..., alt_map=...)`. Tests unitaires.
+- **Plafond mesuré (armure = oracle vérité-terrain, n=60)** : PA stricte
+  **57,5 % → 71,2 %** (plafond diatonique 74,4 %), NA 21,6 → 27,8 %.
+  → confirme que lire l'armure récupère presque tout l'écart strict/diatonique
+  et valide le module bout-en-bout.
+- **Détection automatique** (`dataset.keysig_strip_descriptor` : descripteur de
+  la bande clef→1re note = projections + largeur + encre + nb colonnes ;
+  `scripts/key_experiment.py`, k-NN sur la tonalité) : **~50 % type, ~40 %
+  nombre** — insuffisant pour l'intégrer sans risquer de dégrader la PA.
+  **Bloqueur** : la suppression de portée fragmente les traits fins (dièses,
+  bémols), comme pour les têtes creuses. Correctif amont nécessaire (suppression
+  préservant les contours / reconstruction de symboles) avant d'activer la
+  détection automatique dans le pipeline.
+
 ### Limites connues (honnêtes, à améliorer)
 - **Têtes creuses** (blanches/rondes) : notre suppression de portée (ouverture
   verticale) casse leur contour quasi-horizontal → mal détectées. Pénalise les
   incipits en notes longues. Piste : détection par corrélation de gabarit
   elliptique, ou suppression de portée préservant les contours.
-- **Altérations / armure** : non lues → PA stricte < PA diatonique. Piste :
-  lire l'armure (dièses/bémols après la clef) et appliquer aux lettres.
+- **Altérations / armure** : théorie + intégration faites (PA stricte → 71 %
+  avec armure oracle), mais détection automatique encore ~50 % (fragmentation).
+  Inline accidentals (hors armure) non gérées.
 - **Durées fines** : croche vs double croche (comptage de ligatures) non
   distinguées → RA limitée.
 - **Silences** : non décodés (seules les têtes le sont).

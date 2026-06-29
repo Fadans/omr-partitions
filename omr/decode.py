@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from .heads import detect_heads
+from .key_signature import apply_alteration
 from .segment import Component
 from .staff import StaffMetrics, staff_line_rows
 
@@ -86,7 +87,8 @@ def clean_heads(heads: list[Component]) -> list[Component]:
 
 
 def decode(mask: np.ndarray, nostaff: np.ndarray, metrics: StaffMetrics,
-           clef_token: str, heads: list[Component] | None = None) -> list[dict]:
+           clef_token: str, heads: list[Component] | None = None,
+           alt_map: dict[str, str] | None = None) -> list[dict]:
     if heads is None:
         heads = detect_heads(nostaff, metrics)
     heads = clean_heads(heads)
@@ -95,8 +97,9 @@ def decode(mask: np.ndarray, nostaff: np.ndarray, metrics: StaffMetrics,
 
     notes = []
     for h in sorted(heads, key=lambda c: c.x1):
+        pitch = head_pitch(h, bottom_y, half, v_ref, d_ref)
         notes.append({
-            "pitch": head_pitch(h, bottom_y, half, v_ref, d_ref),
+            "pitch": apply_alteration(pitch, alt_map) if alt_map else pitch,
             "duration": head_duration(nostaff, h, metrics),
         })
     return notes

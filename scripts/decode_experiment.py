@@ -12,6 +12,7 @@ from metrics import note_scores  # noqa: E402
 from omr.dataset import prepared  # noqa: E402
 from omr.decode import decode  # noqa: E402
 from omr.io_primus import list_samples, parse_semantic  # noqa: E402
+from omr.key_signature import alteration_map, key_to_accidentals  # noqa: E402
 
 
 def _strip(notes):
@@ -24,11 +25,19 @@ def clef_token(sample):
         return f.read().split()[0]
 
 
+def key_token(sample):
+    with open(sample.semantic, encoding="utf-8") as f:
+        toks = f.read().split()
+    return toks[1] if len(toks) > 1 and toks[1].startswith("keySignature") else "CM"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", default="base_1/Corpus")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--distorted", action="store_true")
+    ap.add_argument("--key-oracle", action="store_true",
+                    help="applique l'armure de la vérité-terrain (plafond)")
     args = ap.parse_args()
 
     agg = {"pa": [], "ra": [], "na": [], "pa_dia": []}
@@ -38,7 +47,8 @@ def main():
         if not gt:
             continue
         mask, nostaff, metrics, _ = prepared(s, distorted=args.distorted)
-        pred = decode(mask, nostaff, metrics, clef_token(s))
+        alt = alteration_map(*key_to_accidentals(key_token(s))) if args.key_oracle else None
+        pred = decode(mask, nostaff, metrics, clef_token(s), alt_map=alt)
 
         full = note_scores(pred, gt)
         dia = note_scores(_strip(pred), _strip(gt))

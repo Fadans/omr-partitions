@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from .descriptors import describe
+from .decode import clean_heads
+from .descriptors import describe, projection_features
+from .heads import detect_heads
 from .io_primus import PrimusSample, load_gray
 from .preprocess import preprocess
 from .segment import Component, segment
-from .staff import StaffMetrics, estimate_metrics, remove_staff_lines
+from .staff import StaffMetrics, estimate_metrics, remove_staff_lines, staff_line_rows
 
 
 def prepared(sample: PrimusSample, distorted: bool = False):
@@ -36,3 +38,45 @@ def clef_descriptor(sample: PrimusSample, distorted: bool = False):
     if clef is None:
         return None
     return describe(nostaff, clef)
+
+
+def _column_clusters(strip, thr_ratio: float = 0.15) -> int:
+    col = strip.sum(axis=0)
+    on = col > thr_ratio * strip.shape[0]
+    n = 0
+    prev = False
+    for v in on:
+        if v and not prev:
+            n += 1
+        prev = v
+    return n
+
+
+def keysig_strip_descriptor(sample: PrimusSample, distorted: bool = False, bins: int = 16):
+    mask, nostaff, metrics, comps = prepared(sample, distorted)
+    clef = leftmost_tall(comps, metrics)
+    heads = clean_heads(detect_heads(nostaff, metrics))
+    rows = staff_line_rows(mask)
+    if clef is None or not heads or len(rows) < 2:
+        return None
+    first_x = min(h.x1 for h in heads)
+    if first_x - clef.x2 < metrics.line_space:
+        return None
+    pad = metrics.staff_unit
+    y1 = max(0, min(rows) - pad)
+    y2 = min(nostaff.shape[0], max(rows) + pad)
+    strip = nostaff[y1:y2, clef.x2:first_x]
+    su = metrics.staff_unit
+    width = strip.shape[1] / su
+    ink = strip.sum() / (su * su)
+    clusters = _column_clusters(strip)
+    return np.concatenate([
+        projection_features(strip, bins=bins),
+        [width, ink, clusters, clusters / max(1.0, width)],
+    ])
+
+
+def key_token(sample: PrimusSample) -> str:
+    with open(sample.semantic, encoding="utf-8") as f:
+        toks = f.read().split()
+    return toks[1] if len(toks) > 1 and toks[1].startswith("keySignature") else "CM"
