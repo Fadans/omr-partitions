@@ -95,9 +95,27 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
   notes isolées sont bien séparées. → l'étape 5/6 devra **découper les groupes
   ligaturés** en têtes individuelles (morpho/template de tête ovale).
 
+### Étape 5a — Détection des têtes ✅ (`omr/morph.py`, `omr/heads.py`)
+- `morph.py` : morphologie mathématique NumPy pur (réutilisable, portable C++) :
+  `disk`, `rect`, `erode`, `dilate`, `opening`, `closing`.
+- `heads.py` :
+  - `fill_holes(mask)` : bouche les trous (têtes vides blanche/ronde → pleines)
+    via étiquetage du fond et suppression des composantes touchant le bord.
+  - `detect_heads(mask, metrics)` : ouverture morphologique par un disque de
+    rayon ≈ 0,4×interligne → ne survivent que les blobs pleins (têtes) ;
+    élimine hampes (fines), ligatures (fines verticalement), résidus de lignes.
+    Filtrage par taille (≈ interligne), allongement et taux de remplissage.
+    Détecte les têtes **y compris dans les groupes ligaturés**.
+- Résultats : 15 têtes détectées (12 notes GT) — **bon rappel** (toutes les
+  vraies têtes), léger sur-comptage (gracenote exclue du GT + artefacts de
+  ligature). Suffisant : le décodage aligne par distance d'édition, et le F1
+  strict sera mesuré sur DeepScores (vraies boîtes).
+- **À affiner plus tard** : précision (filtrer gracenotes/artefacts), têtes
+  vides vs pleines pour la durée.
+
 ### Étapes suivantes (à faire)
-- [ ] **Étape 5** — `classify.py` : têtes de notes, clefs, silences
-  (descripteurs + k-NN/SVM).
+- [ ] **Étape 5b** — `classify.py` : clefs, silences, altérations
+  (descripteurs surface/allongement/Hu + k-NN), et tête pleine vs vide.
 - [ ] **Étape 6** — `decode.py` : hauteur (position/portée) + durée (forme),
   séquence de notes, export MIDI, branchement sur `evaluate.py`.
 

@@ -7,6 +7,8 @@ from .staff import (
     remove_staff_lines,
 )
 from .segment import Component, label_components, components_from_labels, segment
+from .morph import disk, rect, erode, dilate, opening, closing
+from .heads import fill_holes, detect_heads
 
 __all__ = [
     "load_gray",
@@ -25,4 +27,12 @@ __all__ = [
     "label_components",
     "components_from_labels",
     "segment",
+    "disk",
+    "rect",
+    "erode",
+    "dilate",
+    "opening",
+    "closing",
+    "fill_holes",
+    "detect_heads",
 ]

@@ -8,6 +8,7 @@ from PIL import Image
 
 from .io_primus import PrimusSample, load_gray, list_samples, parse_semantic
 from .preprocess import preprocess
+from .heads import detect_heads
 from .segment import Component, segment
 from .staff import estimate_metrics, remove_staff_lines, staff_line_rows
 
@@ -50,9 +51,11 @@ def demo(sample: PrimusSample, out_dir: str) -> None:
 
         comps = segment(nostaff, min_area=metrics.line_height * metrics.line_space)
         _save_boxes(nostaff, comps, os.path.join(out_dir, f"{sample.sample_id}_{tag}_boxes.png"))
+
+        heads = detect_heads(nostaff, metrics)
+        _save_boxes(nostaff, heads, os.path.join(out_dir, f"{sample.sample_id}_{tag}_heads.png"))
         print(f"  [{tag}] interligne={metrics.line_space} épaisseur={metrics.line_height} "
-              f"lignes={len(rows)} encre {int(mask.sum())}->{int(nostaff.sum())} "
-              f"symboles={len(comps)}")
+              f"lignes={len(rows)} symboles={len(comps)} têtes={len(heads)}")
 
 
 def main() -> None:
