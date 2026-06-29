@@ -8,11 +8,23 @@ from PIL import Image
 
 from .io_primus import PrimusSample, load_gray, list_samples, parse_semantic
 from .preprocess import preprocess
+from .segment import Component, segment
 from .staff import estimate_metrics, remove_staff_lines, staff_line_rows
 
 
 def _save_mask(mask: np.ndarray, path: str) -> None:
     Image.fromarray(np.where(mask, 0, 255).astype(np.uint8)).save(path)
+
+
+def _save_boxes(mask: np.ndarray, comps: list[Component], path: str) -> None:
+    rgb = np.where(mask, 0, 255).astype(np.uint8)
+    rgb = np.stack([rgb] * 3, axis=-1)
+    for c in comps:
+        rgb[c.y1:c.y2, c.x1, :] = (255, 0, 0)
+        rgb[c.y1:c.y2, c.x2 - 1, :] = (255, 0, 0)
+        rgb[c.y1, c.x1:c.x2, :] = (255, 0, 0)
+        rgb[c.y2 - 1, c.x1:c.x2, :] = (255, 0, 0)
+    Image.fromarray(rgb).save(path)
 
 
 def demo(sample: PrimusSample, out_dir: str) -> None:
@@ -35,8 +47,12 @@ def demo(sample: PrimusSample, out_dir: str) -> None:
         rows = staff_line_rows(mask)
         nostaff = remove_staff_lines(mask, metrics)
         _save_mask(nostaff, os.path.join(out_dir, f"{sample.sample_id}_{tag}_nostaff.png"))
+
+        comps = segment(nostaff, min_area=metrics.line_height * metrics.line_space)
+        _save_boxes(nostaff, comps, os.path.join(out_dir, f"{sample.sample_id}_{tag}_boxes.png"))
         print(f"  [{tag}] interligne={metrics.line_space} épaisseur={metrics.line_height} "
-              f"lignes détectées={len(rows)} encre {int(mask.sum())}->{int(nostaff.sum())}")
+              f"lignes={len(rows)} encre {int(mask.sum())}->{int(nostaff.sum())} "
+              f"symboles={len(comps)}")
 
 
 def main() -> None:

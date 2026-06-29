@@ -83,8 +83,19 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
   hauteurs sur images distordues demandera Hough / chemins stables (cf. état
   de l'art). N'affecte pas la suppression des lignes.
 
+### Étape 4 — Segmentation ✅ (`omr/segment.py`)
+- `label_components(mask)` : étiquetage en composantes connexes 8-connexité
+  réimplémenté (union-find à deux passes, NumPy pur → portable C++).
+- `components_from_labels` / `Component` : boîtes englobantes + aire.
+- `segment(mask, min_area)` : filtre les petites composantes (bruit) et trie
+  les symboles de gauche à droite. `min_area` réglé sur épaisseur×interligne.
+- Résultats : propre → 21 symboles, distordu → 39 (plus fragmenté).
+- **Observation clé (attendue)** : les groupes **ligaturés** (têtes+hampes+
+  ligature reliées) forment une seule composante. Clef, altérations, mesure et
+  notes isolées sont bien séparées. → l'étape 5/6 devra **découper les groupes
+  ligaturés** en têtes individuelles (morpho/template de tête ovale).
+
 ### Étapes suivantes (à faire)
-- [ ] **Étape 4** — `segment.py` : composantes connexes → symboles.
 - [ ] **Étape 5** — `classify.py` : têtes de notes, clefs, silences
   (descripteurs + k-NN/SVM).
 - [ ] **Étape 6** — `decode.py` : hauteur (position/portée) + durée (forme),
