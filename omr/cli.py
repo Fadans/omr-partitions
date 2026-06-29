@@ -8,6 +8,7 @@ from PIL import Image
 
 from .io_primus import PrimusSample, load_gray, list_samples, parse_semantic
 from .preprocess import preprocess
+from .staff import estimate_metrics, remove_staff_lines, staff_line_rows
 
 
 def _save_mask(mask: np.ndarray, path: str) -> None:
@@ -28,9 +29,14 @@ def demo(sample: PrimusSample, out_dir: str) -> None:
         if not os.path.exists(path):
             continue
         mask = preprocess(load_gray(path), adaptive=adaptive)
-        out = os.path.join(out_dir, f"{sample.sample_id}_{tag}_bin.png")
-        _save_mask(mask, out)
-        print(f"  -> {out}  ({int(mask.sum())} px encre)")
+        _save_mask(mask, os.path.join(out_dir, f"{sample.sample_id}_{tag}_bin.png"))
+
+        metrics = estimate_metrics(mask)
+        rows = staff_line_rows(mask)
+        nostaff = remove_staff_lines(mask, metrics)
+        _save_mask(nostaff, os.path.join(out_dir, f"{sample.sample_id}_{tag}_nostaff.png"))
+        print(f"  [{tag}] interligne={metrics.line_space} épaisseur={metrics.line_height} "
+              f"lignes détectées={len(rows)} encre {int(mask.sum())}->{int(nostaff.sum())}")
 
 
 def main() -> None:
