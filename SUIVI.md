@@ -215,6 +215,23 @@ partielles, notes pointées).
   77,9 → **80,2** (têtes creuses enfin détectées) ; détection du **type**
   d'armure 51 → 67 %.
 
+### Silences (rests) — WIP, non intégré (`omr/rests.py`, `scripts/rest_experiment.py`)
+Demandé par le sujet (« notes, clefs et silences »). 59 % des incipits ont ≥1
+silence (durées dominantes : croche, noire, blanche).
+- `detect_rests` : détecteur **géométrique** (composantes entre la 1re et la
+  dernière tête, isolées en x des têtes, ni tête ni barre de mesure).
+  Seul, il **sur-détecte massivement** (~1079 pour 181 réels) : il attrape
+  barres, multi-pauses, bouts de ligatures/hampes.
+- **Filtre k-NN rest/non-rest** (descripteurs de forme) : entraîné sur des
+  négatifs « gratuits » (composantes des incipits sans silence) + positifs des
+  incipits au compte exact. Résultat : **95 % des faux positifs rejetés**
+  (239/252), mais précision 41 % / rappel 64 % — limité par le **peu de positifs
+  d'entraînement** (17). Pas assez fiable pour l'intégrer dans `decode` sans
+  risquer de dégrader la NA (cf. leçon du point d'augmentation).
+- **Pistes** : plus d'exemples positifs (gabarits de silences, ou critère
+  d'auto-étiquetage relâché) ; gérer les silences en tête (41 % des incipits
+  commencent par un silence/multi-pause, hors du champ actuel).
+
 ### Limites connues (honnêtes, à améliorer)
 - **Têtes creuses** (blanches/rondes) : nettement améliorées par la suppression
   combinée (cf. étape 3) ; restent un peu moins fiables que les têtes pleines.
