@@ -5,7 +5,7 @@ import numpy as np
 from .heads import detect_heads
 from .key_signature import apply_alteration
 from .segment import Component
-from .staff import StaffMetrics, staff_line_rows
+from .staff import StaffMetrics, _column_runs, staff_line_rows
 
 LETTERS = "CDEFGAB"
 _CLEF_REF = {"G": ("G", 4), "C": ("C", 4), "F": ("F", 3)}
@@ -43,27 +43,73 @@ def head_pitch(head: Component, bottom_y: float, half: float,
     return _value_to_pitch(v_ref + (d - d_ref))
 
 
+_BEAM_DURATION = {0: "quarter", 1: "eighth", 2: "sixteenth",
+                  3: "thirty_second", 4: "sixty_fourth"}
+
+
+def _find_stem(nostaff: np.ndarray, head: Component, metrics: StaffMetrics):
+    h, w = nostaff.shape
+    x0 = max(0, head.x1 - metrics.line_height)
+    x1 = min(w, head.x2 + metrics.line_height)
+    min_len = int(1.5 * metrics.staff_unit)
+    best = (0, None, None, None)
+    for x in range(x0, x1):
+        for s, ln, val in zip(*_column_runs(nostaff[:, x])):
+            if val and ln > best[0]:
+                best = (ln, x, s, s + ln)
+    if best[0] < min_len:
+        return None
+    return best[1], best[2], best[3]
+
+
+def _count_beams(nostaff: np.ndarray, head: Component, stem, metrics: StaffMetrics) -> int:
+    stem_x, top, bottom = stem
+    head_cy = (head.y1 + head.y2) / 2
+    u = metrics.staff_unit
+    h, w = nostaff.shape
+    if top < head_cy:
+        y0, y1 = max(0, top - metrics.line_height), min(h, top + 2 * u)
+    else:
+        y0, y1 = max(0, bottom - 2 * u), min(h, bottom + metrics.line_height)
+
+    reach = int(1.6 * u)
+    left = nostaff[y0:y1, max(0, stem_x - reach):stem_x].sum()
+    right = nostaff[y0:y1, stem_x + 1:stem_x + 1 + reach].sum()
+    if max(left, right) == 0:
+        return 0
+    if right >= left:
+        cols = range(stem_x + 2, min(w, stem_x + reach))
+    else:
+        cols = range(max(0, stem_x - reach), stem_x - 1)
+
+    max_beam = 1.4 * u
+    counts = []
+    for x in cols:
+        runs = sum(1 for s, ln, val in zip(*_column_runs(nostaff[y0:y1, x]))
+                   if val and metrics.line_height <= ln <= max_beam)
+        if runs:
+            counts.append(runs)
+    if not counts:
+        return 0
+    counts = np.array(counts)
+    beams = 1
+    for k in (2, 3, 4):
+        if np.mean(counts >= k) >= 0.3:
+            beams = k
+    return beams
+
+
 def head_duration(nostaff: np.ndarray, head: Component, metrics: StaffMetrics) -> str:
     crop = nostaff[head.y1:head.y2, head.x1:head.x2]
-    fill = crop.sum() / max(1, crop.size)
-    hollow = fill < 0.55
+    hollow = crop.sum() / max(1, crop.size) < 0.55
+    stem = _find_stem(nostaff, head, metrics)
 
-    col_sums = nostaff[:, max(0, head.x1 - 1):head.x2 + 1].sum(axis=0)
-    has_stem = col_sums.max() >= 2.5 * metrics.staff_unit
-
-    if hollow and not has_stem:
-        return "whole"
+    if stem is None:
+        return "whole" if hollow else "quarter"
     if hollow:
         return "half"
-    if not has_stem:
-        return "quarter"
-    return "quarter" if not _has_flag_or_beam(nostaff, head, metrics) else "eighth"
-
-
-def _has_flag_or_beam(nostaff: np.ndarray, head: Component, metrics: StaffMetrics) -> bool:
-    band = nostaff[max(0, head.y1 - 3 * metrics.staff_unit):head.y1,
-                   head.x2:min(nostaff.shape[1], head.x2 + 2 * metrics.staff_unit)]
-    return band.sum() > metrics.staff_unit * metrics.line_height
+    return _BEAM_DURATION.get(_count_beams(nostaff, head, stem, metrics),
+                              "sixty_fourth")
 
 
 def clean_heads(heads: list[Component]) -> list[Component]:

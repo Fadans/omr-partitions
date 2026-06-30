@@ -150,8 +150,10 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
   - **Hauteur** : géométrie de portée (`staff_line_rows` sur le masque AVEC
     lignes → ligne du bas + demi-pas), clef → pitch de référence et ligne
     (`clef_reference`), position de la tête → nom + octave diatonique.
-  - **Durée** (grossière) : tête pleine/vide (taux de remplissage), présence de
-    hampe (run vertical), de ligature/crochet → ronde/blanche/noire/croche.
+  - **Durée** : tête pleine/vide (remplissage), détection de hampe
+    (`_find_stem`, plus long run vertical près de la tête), **comptage des
+    ligatures/crochets** (`_count_beams` : runs verticaux dans la zone de débord
+    de la hampe) → ronde/blanche/noire/croche/double…
   - `clean_heads` : filtre par hauteur médiane + suppression des chevauchements
     (enlève gracenotes/fragments/doublons).
 - `midi.py` : **writer Standard MIDI File maison** (pur Python, zéro dépendance
@@ -190,13 +192,17 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
 
 | Sous-ensemble | N | PA strict | PA diat. | RA | NA |
 |---|---|---|---|---|---|
-| PrIMuS simple (auto) | 58 | 77,9 | 82,2 | 37,4 | 35,0 |
-| PrIMuS général (auto) | 300 | 59,0 | 77,7 | 34,8 | 26,9 |
-| PrIMuS général (armure oracle) | 300 | 74,7 | 77,7 | 35,4 | 33,2 |
+| PrIMuS simple (auto) | 58 | 74,3 | 78,1 | 40,3 | 37,2 |
+| PrIMuS général (auto) | 300 | 58,5 | 77,9 | 42,6 | 31,8 |
+| PrIMuS général (armure oracle) | 300 | ~74 | 77,9 | 42,6 | ~38 |
 
-Lecture : hauteurs correctes (78–82 % diat.) ; l'armure non lue coûte ~16 pts de
-PA stricte (oracle 75 vs 59) ; **le rythme (~35 % partout) est le vrai point
-faible** et plombe la NA même sur le simple.
+Lecture : hauteurs correctes (78 % diat.) ; l'armure non lue coûte ~16 pts de PA
+stricte ; le rythme a progressé (RA 35→43 général) grâce au **comptage de
+ligatures**, mais reste le point faible (ligatures partielles, notes pointées).
+
+**Historique rythme** : RA général 34,8 → **42,6** et NA général 26,9 → **31,8**
+après ajout du comptage de ligatures (`_count_beams`). La détection du point
+d'augmentation a été testée puis retirée (trop de faux positifs).
 
 ### Limites connues (honnêtes, à améliorer)
 - **Têtes creuses** (blanches/rondes) : notre suppression de portée (ouverture
