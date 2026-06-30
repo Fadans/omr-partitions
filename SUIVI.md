@@ -185,6 +185,19 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
   préservant les contours / reconstruction de symboles) avant d'activer la
   détection automatique dans le pipeline.
 
+### Banc d'essai PA/RA/NA (`scripts/benchmark.py`, n=300)
+« simple » = sans armure et sans notes creuses (le cas géré par la chaîne).
+
+| Sous-ensemble | N | PA strict | PA diat. | RA | NA |
+|---|---|---|---|---|---|
+| PrIMuS simple (auto) | 58 | 77,9 | 82,2 | 37,4 | 35,0 |
+| PrIMuS général (auto) | 300 | 59,0 | 77,7 | 34,8 | 26,9 |
+| PrIMuS général (armure oracle) | 300 | 74,7 | 77,7 | 35,4 | 33,2 |
+
+Lecture : hauteurs correctes (78–82 % diat.) ; l'armure non lue coûte ~16 pts de
+PA stricte (oracle 75 vs 59) ; **le rythme (~35 % partout) est le vrai point
+faible** et plombe la NA même sur le simple.
+
 ### Limites connues (honnêtes, à améliorer)
 - **Têtes creuses** (blanches/rondes) : notre suppression de portée (ouverture
   verticale) casse leur contour quasi-horizontal → mal détectées. Pénalise les
