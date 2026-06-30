@@ -7,6 +7,8 @@ from .staff import (
     staff_lines_mask,
     remove_staff_lines,
     remove_staff_lines_runlength,
+    remove_staff_lines_bridge,
+    remove_staff_lines_combined,
 )
 from .segment import Component, label_components, components_from_labels, segment
 from .morph import disk, rect, erode, dilate, opening, closing
@@ -31,6 +33,8 @@ __all__ = [
     "staff_lines_mask",
     "remove_staff_lines",
     "remove_staff_lines_runlength",
+    "remove_staff_lines_bridge",
+    "remove_staff_lines_combined",
     "Component",
     "label_components",
     "components_from_labels",

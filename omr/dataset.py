@@ -8,14 +8,19 @@ from .heads import detect_heads
 from .io_primus import PrimusSample, load_gray
 from .preprocess import preprocess
 from .segment import Component, segment
-from .staff import StaffMetrics, estimate_metrics, remove_staff_lines, staff_line_rows
+from .staff import (
+    StaffMetrics,
+    estimate_metrics,
+    remove_staff_lines_combined,
+    staff_line_rows,
+)
 
 
 def prepared(sample: PrimusSample, distorted: bool = False):
     path = sample.distorted if distorted else sample.png
     mask = preprocess(load_gray(path), adaptive=distorted)
     metrics = estimate_metrics(mask)
-    nostaff = remove_staff_lines(mask, metrics)
+    nostaff = remove_staff_lines_combined(mask, metrics)
     comps = segment(nostaff, min_area=metrics.line_height * metrics.line_space)
     return mask, nostaff, metrics, comps
 

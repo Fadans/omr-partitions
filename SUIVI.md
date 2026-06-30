@@ -86,8 +86,16 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
 - `remove_staff_lines(mask, metrics)` : **ouverture morphologique à ES vertical**
   (TIFO2 §5.3) — garde les structures plus hautes que l'épaisseur d'une ligne →
   enlève les lignes tout en gardant hampes, têtes et **ligatures**.
-  `remove_staff_lines_runlength` : variante par runs verticaux (résultat
-  identique). `staff_lines_mask` : isole les lignes par ouverture à ES horizontal.
+  `remove_staff_lines_runlength` : variante par runs verticaux (identique).
+  `staff_lines_mask` : isole les lignes par ouverture à ES horizontal.
+- `remove_staff_lines_bridge` : n'efface une ligne **que là où aucun symbole ne
+  la traverse** (pixels « pont » conservés si encre au-dessus ET au-dessous) →
+  préserve les contours fins (têtes creuses, altérations) mais abîme les
+  ligatures coïncidant avec une ligne.
+- **`remove_staff_lines_combined`** (méthode du pipeline) : union de l'ouverture
+  morphologique et du pont → garde ligatures/notes pleines (morpho) **et** têtes
+  creuses/altérations (pont) ; une vraie ligne (enlevée par les deux) disparaît.
+  C'est ce qui a débloqué la détection des têtes creuses.
 - Choix de l'ES **vertical** plutôt qu'horizontal : l'ES horizontal (texte
   littéral de l'état de l'art) abîme les ligatures (horizontales et longues),
   vérifié visuellement. Écart documenté dans `CORRESPONDANCE_COURS.md`.
@@ -192,23 +200,24 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
 
 | Sous-ensemble | N | PA strict | PA diat. | RA | NA |
 |---|---|---|---|---|---|
-| PrIMuS simple (auto) | 58 | 74,3 | 78,1 | 40,3 | 37,2 |
-| PrIMuS général (auto) | 300 | 58,5 | 77,9 | 42,6 | 31,8 |
-| PrIMuS général (armure oracle) | 300 | ~74 | 77,9 | 42,6 | ~38 |
+| PrIMuS simple (auto) | 58 | 75,8 | 80,2 | 41,2 | 37,6 |
+| PrIMuS général (auto) | 300 | 60,4 | 80,2 | 42,5 | 30,9 |
+| PrIMuS général (armure oracle) | 300 | 77,3 | 80,2 | 43,4 | 39,7 |
 
-Lecture : hauteurs correctes (78 % diat.) ; l'armure non lue coûte ~16 pts de PA
-stricte ; le rythme a progressé (RA 35→43 général) grâce au **comptage de
-ligatures**, mais reste le point faible (ligatures partielles, notes pointées).
+Lecture : hauteurs correctes (80 % diat.) ; l'armure non lue coûte ~17 pts de PA
+stricte (oracle 77 vs 60) ; le rythme reste le point faible (ligatures
+partielles, notes pointées).
 
-**Historique rythme** : RA général 34,8 → **42,6** et NA général 26,9 → **31,8**
-après ajout du comptage de ligatures (`_count_beams`). La détection du point
-d'augmentation a été testée puis retirée (trop de faux positifs).
+**Historique des gains** :
+- *Comptage de ligatures* (`_count_beams`) : RA général 34,8 → 42,6 ;
+  NA 26,9 → 31,8. (Point d'augmentation testé puis retiré : faux positifs.)
+- *Suppression de portée combinée* (cf. étape 3) : PA diatonique général
+  77,9 → **80,2** (têtes creuses enfin détectées) ; détection du **type**
+  d'armure 51 → 67 %.
 
 ### Limites connues (honnêtes, à améliorer)
-- **Têtes creuses** (blanches/rondes) : notre suppression de portée (ouverture
-  verticale) casse leur contour quasi-horizontal → mal détectées. Pénalise les
-  incipits en notes longues. Piste : détection par corrélation de gabarit
-  elliptique, ou suppression de portée préservant les contours.
+- **Têtes creuses** (blanches/rondes) : nettement améliorées par la suppression
+  combinée (cf. étape 3) ; restent un peu moins fiables que les têtes pleines.
 - **Altérations / armure** : théorie + intégration faites (PA stricte → 71 %
   avec armure oracle), mais détection automatique encore ~50 % (fragmentation).
   Inline accidentals (hors armure) non gérées.

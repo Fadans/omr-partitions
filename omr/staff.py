@@ -68,6 +68,35 @@ def remove_staff_lines(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
     return opening(mask, rect(height, 1))
 
 
+def remove_staff_lines_combined(mask: np.ndarray, metrics: StaffMetrics,
+                                rows: list[int] | None = None) -> np.ndarray:
+    if rows is None:
+        rows = staff_line_rows(mask)
+    return remove_staff_lines(mask, metrics) | remove_staff_lines_bridge(mask, metrics, rows)
+
+
+def remove_staff_lines_bridge(mask: np.ndarray, metrics: StaffMetrics,
+                              rows: list[int] | None = None) -> np.ndarray:
+    if rows is None:
+        rows = staff_line_rows(mask)
+    if len(rows) < 2:
+        return remove_staff_lines(mask, metrics)
+    out = mask.copy()
+    th = metrics.line_height
+    gap = 2
+    h, w = mask.shape
+    for r in rows:
+        r0, r1 = max(0, r - th), min(h, r + th + 1)
+        a0, b1 = max(0, r0 - gap), min(h, r1 + gap)
+        band = mask[r0:r1]
+        above = mask[a0:r0].any(axis=0) if r0 > a0 else np.zeros(w, bool)
+        below = mask[r1:b1].any(axis=0) if b1 > r1 else np.zeros(w, bool)
+        bridged = above & below
+        cols = band.any(axis=0) & ~bridged
+        out[r0:r1, cols] = False
+    return out
+
+
 def remove_staff_lines_targeted(mask: np.ndarray, metrics: StaffMetrics,
                                 rows: list[int] | None = None) -> np.ndarray:
     if rows is None:

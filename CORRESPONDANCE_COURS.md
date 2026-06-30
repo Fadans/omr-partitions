@@ -13,6 +13,7 @@ Le prototype mobilise **uniquement des notions vues en TIFO 1, TIFO 2 et MLRF**
 | `staff.staff_line_rows` | Projection / histogramme de lignes | TIFO1 ch4 ; état de l'art |
 | `staff.staff_lines_mask` | Ouverture morphologique (ES horizontal) | TIFO2 §5.3 |
 | `staff.remove_staff_lines` | **Ouverture morphologique** (ES vertical : garde les structures plus hautes que l'épaisseur d'une ligne ⇒ enlève les lignes, garde têtes/hampes/ligatures) | TIFO2 §5.3 |
+| `staff.remove_staff_lines_combined` | Union ouverture morphologique + suppression « pont » (conserve les pixels où un symbole traverse la ligne) ⇒ préserve aussi les contours fins (têtes creuses, altérations) | TIFO2 §5.3, connexité |
 | `morph` (erode/dilate/opening/closing) | Les 4 opérateurs morphologiques fondamentaux | TIFO2 §5 |
 | `morph` (disk/rect) | Élément structurant | TIFO2 §4.2 |
 | `segment.label_components` | Connexité, étiquetage en composantes connexes (8-conn.) | TIFO1 ch3 §3.4 ; TIFO2 §4.1 |

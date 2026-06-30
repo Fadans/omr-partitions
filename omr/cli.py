@@ -12,7 +12,7 @@ from .decode import decode
 from .heads import detect_heads
 from .midi import write_midi
 from .segment import Component, segment
-from .staff import estimate_metrics, remove_staff_lines, staff_line_rows
+from .staff import estimate_metrics, remove_staff_lines_combined, staff_line_rows
 
 
 def _save_mask(mask: np.ndarray, path: str) -> None:
@@ -48,7 +48,7 @@ def demo(sample: PrimusSample, out_dir: str) -> None:
 
         metrics = estimate_metrics(mask)
         rows = staff_line_rows(mask)
-        nostaff = remove_staff_lines(mask, metrics)
+        nostaff = remove_staff_lines_combined(mask, metrics)
         _save_mask(nostaff, os.path.join(out_dir, f"{sample.sample_id}_{tag}_nostaff.png"))
 
         comps = segment(nostaff, min_area=metrics.line_height * metrics.line_space)
