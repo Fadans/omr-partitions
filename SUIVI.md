@@ -311,6 +311,16 @@ durées + décomposition pitch/rythme), puis itérations mesurées. Ordre réel 
     adaptative, détection de têtes). **Bilan** : défaut `combined` sur imprimé ;
     chemins stables **pertinents et validés** pour le cas déformé/manuscrit
     (comme prévu dans l'état de l'art §2).
+11. **Essai — détection de portées par transformée de Hough** (GARDÉ comme
+    expérience ; méthode **annoncée** état de l'art §2). `staff_lines_hough` :
+    Hough restreint aux droites quasi horizontales (projection de l'encre sur
+    b = y − a·x pour chaque pente ; la pente qui concentre le mieux = inclinaison,
+    pics = lignes). Comparé à notre projection (`scripts/benchmark_hough.py`,
+    n=300) : **imprimé** identiques (100 % trouvent les 5 lignes) ; **déformé**
+    la projection ne trouve les 5 lignes que **61 %** du temps contre **99 %**
+    pour Hough (inclinaison moyenne récupérée 0,6°). → confirme l'avantage
+    annoncé de Hough sur portées inclinées. Défaut sur imprimé inchangé
+    (projection, suffisante et plus simple) ; Hough disponible pour le déformé.
 
 ### Silences (rests) — méthode implémentée, opt-in (`omr/rest_knn.py`, `omr/rests.py`)
 Demandé par le sujet (« notes, clefs et silences »). Prévalence mesurée

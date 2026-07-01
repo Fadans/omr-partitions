@@ -6,6 +6,7 @@ from omr.staff import (
     remove_staff_lines,
     remove_staff_lines_stable_paths,
     staff_line_rows,
+    staff_lines_hough,
 )
 
 
@@ -43,6 +44,29 @@ def test_remove_staff_lines_keeps_stem_and_head():
     assert out[24:30, 46:52].any()        # tête conservée
     for r in [10, 18, 34, 42]:            # lignes effacées (hors hampe/tête)
         assert not out[r, :45].any()
+
+
+def test_hough_straight_staff():
+    mask, line_rows = _synthetic_staff()
+    deg, rows = staff_lines_hough(mask)
+    assert abs(deg) < 1.0                 # portée droite -> ~0°
+    assert len(rows) == 5
+    for got, exp in zip(sorted(rows), line_rows):
+        assert abs(got - exp) <= 1
+
+
+def test_hough_recovers_incline():
+    h, w = 60, 120
+    mask = np.zeros((h, w), dtype=bool)
+    slope = np.tan(np.deg2rad(3.0))
+    for r in (12, 20, 28, 36, 44):
+        for x in range(w):
+            y = int(round(r + slope * x))
+            if 0 <= y < h:
+                mask[y, x] = True
+    deg, rows = staff_lines_hough(mask)
+    assert deg > 1.0                      # inclinaison détectée
+    assert len(rows) == 5
 
 
 def test_stable_paths_removes_line_keeps_symbols():

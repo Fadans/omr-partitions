@@ -61,3 +61,11 @@ Camera-PrIMuS **déformé** (`--distorted`) : chemins stables **meilleurs pour l
 hauteurs** (PA_dia 38,3 → 43,2), confirmant l'avantage annoncé sur lignes
 courbes. Défaut retenu : `combined` (imprimé) ; chemins stables validés pour le
 cas déformé/manuscrit.
+
+**Transformée de Hough (annoncée §2) testée.** `staff_lines_hough` (Hough
+restreint aux droites quasi horizontales) vs notre détection par projection
+(`scripts/benchmark_hough.py`) : sur **imprimé** identiques (100 % trouvent les
+5 lignes) ; sur **déformé**, la projection ne trouve les 5 lignes que 61 % du
+temps contre **99 %** pour Hough. Confirme l'intérêt annoncé de Hough sur portées
+inclinées. Défaut sur imprimé : projection (plus simple) ; Hough dispo pour le
+déformé.

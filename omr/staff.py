@@ -58,6 +58,48 @@ def staff_line_rows(mask: np.ndarray, ratio: float = 0.5) -> list[int]:
     return rows
 
 
+def staff_lines_hough(mask: np.ndarray, angle_range_deg: float = 6.0,
+                      n_angles: int = 25, ratio: float = 0.5):
+    # Détection de portées par transformée de Hough (annoncé état de l'art §2),
+    # restreinte aux droites quasi horizontales : pour chaque pente candidate on
+    # projette l'encre sur b = y - a·x ; la pente qui concentre le mieux l'encre
+    # (pics nets) donne l'inclinaison, et les pics donnent les lignes.
+    ys, xs = np.nonzero(mask)
+    if ys.size == 0:
+        return 0.0, []
+    h, w = mask.shape
+    xc = w / 2.0
+    angles = np.linspace(-angle_range_deg, angle_range_deg, n_angles)
+    best = None
+    for deg in angles:
+        a = np.tan(np.deg2rad(deg))
+        b = ys - a * xs
+        bi = np.round(b - b.min()).astype(np.int64)
+        hist = np.bincount(bi)
+        score = float((hist.astype(np.float64) ** 2).sum())  # net = concentré
+        if best is None or score > best[0]:
+            best = (score, deg, a, b.min())
+    _, deg, a, bmin = best
+    b = ys - a * xs
+    bi = np.round(b - bmin).astype(np.int64)
+    hist = np.bincount(bi)
+    if hist.max() == 0:
+        return deg, []
+    on = hist >= ratio * hist.max()
+    rows, start = [], None
+    for i, v in enumerate(on):
+        if v and start is None:
+            start = i
+        elif not v and start is not None:
+            b_center = bmin + (start + i - 1) / 2.0
+            rows.append(int(round(b_center + a * xc)))
+            start = None
+    if start is not None:
+        b_center = bmin + (start + len(on) - 1) / 2.0
+        rows.append(int(round(b_center + a * xc)))
+    return deg, rows
+
+
 def staff_lines_mask(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
     length = max(3, 2 * metrics.line_space)
     return opening(mask, rect(1, length))
