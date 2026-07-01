@@ -365,6 +365,48 @@ sortie MIDI → **laissée opt-in/OFF**, comme l'auto-armure.
 
 ---
 
+## Bilan WP2 — réalisé vs annoncé (état de l'art / sujet)
+
+Le sujet demande : lire **notes (hauteur + durée), clefs et silences**, export
+MIDI, avec les seules notions TIFO/MLRF (pas de réseau). L'état de l'art
+(livrable 1) décrit une chaîne : prétraitement → portées → détection de symboles
+→ classification (descripteurs + k-NN/SVM) → décodage → MIDI. Correspondance :
+
+| Étape annoncée (livrable 1) | Réalisé | État |
+|---|---|---|
+| Prétraitement (gris, Otsu, médian, adaptatif) | `preprocess.py` | ✅ |
+| Métriques de portée (run-length) | `staff.estimate_metrics` | ✅ |
+| Suppression des portées (ouverture morpho.) | `staff.remove_staff_lines_combined` (ES **vertical** + pont, cf. écart) | ✅ |
+| Segmentation (composantes connexes) | `segment.py` (union-find 8-conn) | ✅ |
+| Détection des têtes (gabarit **ou** morpho. ovale) | `heads.detect_heads` (morpho.) ; gabarit testé et écarté | ✅ (morpho.) |
+| Clef (descripteurs + k-NN) | `dataset` + `knn` (exp.) ; décodage prend la clef GT | ⚠️ classif prototypée, non câblée |
+| **Hauteurs** (position + clef) | `decode.head_pitch` | ✅ |
+| **Durées** (tête/hampe/ligatures/points) | `duration_knn` (k-NN) + repli géométrique | ✅ (gain majeur) |
+| **Altérations / armure** (descripteurs + k-NN + théorie) | `key_signature` + `dataset` ; théorie ✅, **auto = mur** | ⚠️ oracle OK, auto OFF |
+| **Silences** (descripteurs + k-NN) | `rest_knn` (opt-in) | ⚠️ méthode OK, détection = mur |
+| Export MIDI | `midi.py` (SMF pur) | ✅ |
+| Évaluation (PA/RA/NA, IoU/F1) | `livrable2_evaluation` + benchmarks | ✅ |
+
+**Chiffres finaux (test disjoint n=800)** : simple NA **74**, général NA **56**
+(PA diat. 84, RA 71) ; général + armure oracle NA **66**.
+
+**Écarts assumés et documentés** (pour la soutenance) :
+1. Suppression de portée par ES **vertical** (l'horizontal de l'état de l'art
+   abîme les ligatures) — reste une ouverture morphologique.
+2. Durées par **k-NN** (annoncé géométrique au §5) : extension de la méthode
+   k-NN déjà prévue au §4, car la géométrie seule était peu fiable.
+3. **Armure** et **silences** : méthodes conformes implémentées, mais détection
+   automatique non fiable (fragmentation + sur-détection à cette résolution) →
+   laissées OFF/opt-in, plafonds documentés. Ce sont les vraies limites d'un
+   prototype **sans réseau de neurones**.
+4. Détection de têtes : les **deux** options du §4 testées ; morphologie retenue.
+
+**Honnêteté méthodo.** Tous les essais (gardés/abandonnés) sont journalisés
+ci-dessus (essais 1→9). Aucune amélioration annoncée sans mesure ; les reculs
+(contiguïté, couverture, filtre clef, gabarit têtes) sont documentés et revertés.
+
+---
+
 ## WP3 — Implémentation C++ (à venir)
 
 ## WP4 — Pilotage
