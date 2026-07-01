@@ -24,6 +24,7 @@ Le prototype mobilise **uniquement des notions vues en TIFO 1, TIFO 2 et MLRF**
 | `key_signature` / lecture armure | Descripteur de bande (projections) + k-NN ; théorie musicale (ordre fixe des altérations) | MLRF L1/L3 |
 | `decode.beam_mask` | Ouverture morphologique **horizontale** : isole les ligatures (traits horizontaux longs), supprime hampes fines et têtes rondes | TIFO2 §5.3 |
 | `duration_knn` (durées) | Descripteurs de forme (projections + géométrie) de la région tête+hampe+ligature → **k-NN** ; remplace des règles géométriques bricolées | MLRF L1 (descripteurs), L3 (matching) |
+| `rests` / `rest_knn` (silences) | Détection géométrique de candidats + **k-NN** de forme (projections + Hu + position) ; décision unanime haute précision | TIFO2 (composantes) ; MLRF L1/L3 |
 | `metrics.note_scores` | Distance d'édition (Levenshtein) pour l'alignement | MLRF L1 (note 1) |
 | `metrics.detection_f1` | IoU (indice de Jaccard), précision/rappel/F1 | MLRF (évaluation) |
 

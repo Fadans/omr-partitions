@@ -5,7 +5,7 @@ import numpy as np
 from .heads import detect_heads
 from .key_signature import apply_alteration
 from .morph import opening, rect
-from .segment import Component
+from .segment import Component, segment
 from .staff import StaffMetrics, _column_runs, staff_line_rows
 
 LETTERS = "CDEFGAB"
@@ -130,7 +130,7 @@ def clean_heads(heads: list[Component]) -> list[Component]:
 def decode(mask: np.ndarray, nostaff: np.ndarray, metrics: StaffMetrics,
            clef_token: str, heads: list[Component] | None = None,
            alt_map: dict[str, str] | None = None,
-           dur_clf=None) -> list[dict]:
+           dur_clf=None, rest_clf=None) -> list[dict]:
     if heads is None:
         heads = detect_heads(nostaff, metrics)
     heads = clean_heads(heads)
@@ -138,15 +138,25 @@ def decode(mask: np.ndarray, nostaff: np.ndarray, metrics: StaffMetrics,
     v_ref, d_ref = clef_reference(clef_token)
     bmask = beam_mask(nostaff, metrics)
 
-    notes = []
+    items = []  # (x, entrée) pour fusionner notes et silences dans l'ordre
     for h in sorted(heads, key=lambda c: c.x1):
         pitch = head_pitch(h, bottom_y, half, v_ref, d_ref)
         if dur_clf is not None:
             duration = dur_clf.predict_head(nostaff, bmask, h, metrics)
         else:
             duration = head_duration(nostaff, h, metrics, bmask)
-        notes.append({
+        items.append(((h.x1 + h.x2) / 2, {
             "pitch": apply_alteration(pitch, alt_map) if alt_map else pitch,
             "duration": duration,
-        })
-    return notes
+        }))
+
+    if rest_clf is not None and heads:
+        rows = staff_line_rows(mask)
+        if len(rows) >= 2:
+            comps = segment(nostaff, min_area=metrics.line_height * metrics.line_space)
+            for x, dur in rest_clf.detect(nostaff, comps, heads, metrics,
+                                          min(rows), max(rows)):
+                items.append((x, {"pitch": "rest", "duration": dur}))
+
+    items.sort(key=lambda t: t[0])
+    return [entry for _, entry in items]

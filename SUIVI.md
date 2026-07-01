@@ -286,22 +286,32 @@ durées + décomposition pitch/rythme), puis itérations mesurées. Ordre réel 
    détecteur de bord de clef supprime parfois de **vraies premières notes**
    (dégât collatéral > bénéfice). → reverté.
 
-### Silences (rests) — WIP, non intégré (`omr/rests.py`, `scripts/rest_experiment.py`)
-Demandé par le sujet (« notes, clefs et silences »). 59 % des incipits ont ≥1
-silence (durées dominantes : croche, noire, blanche).
-- `detect_rests` : détecteur **géométrique** (composantes entre la 1re et la
-  dernière tête, isolées en x des têtes, ni tête ni barre de mesure).
-  Seul, il **sur-détecte massivement** (~1079 pour 181 réels) : il attrape
-  barres, multi-pauses, bouts de ligatures/hampes.
-- **Filtre k-NN rest/non-rest** (descripteurs de forme) : entraîné sur des
-  négatifs « gratuits » (composantes des incipits sans silence) + positifs des
-  incipits au compte exact. Résultat : **95 % des faux positifs rejetés**
-  (239/252), mais précision 41 % / rappel 64 % — limité par le **peu de positifs
-  d'entraînement** (17). Pas assez fiable pour l'intégrer dans `decode` sans
-  risquer de dégrader la NA (cf. leçon du point d'augmentation).
-- **Pistes** : plus d'exemples positifs (gabarits de silences, ou critère
-  d'auto-étiquetage relâché) ; gérer les silences en tête (41 % des incipits
-  commencent par un silence/multi-pause, hors du champ actuel).
+### Silences (rests) — méthode implémentée, opt-in (`omr/rest_knn.py`, `omr/rests.py`)
+Demandé par le sujet (« notes, clefs et silences »). Prévalence mesurée
+(n=3000) : **65 %** des incipits ont un silence/multi-pause, **39 %** ont un
+silence *au milieu* (entre 1re et dernière note, ~2391 au total), **41 %**
+commencent par un silence/multi-pause.
+
+**Méthode** (conforme état de l'art §4-5, MLRF) : détecteur géométrique de
+candidats (`detect_rests`) + **classifieur k-NN de forme** (`RestClassifier`,
+descripteur projections + Hu + géométrie + position verticale relative), en
+mode **haute précision** (voisins unanimes sinon « none »). Intégré à `decode`
+via le paramètre `rest_clf` (fusion notes+silences par position x), **désactivé
+par défaut**. Entraînement : `scripts/train_rest.py` ; éval :
+`scripts/rest_class_experiment.py`.
+
+**Résultat : même mur que l'armure.** L'auto-étiquetage n'exploite que les
+échantillons où `#candidats == #silences`, or `detect_rests` **sur-détecte** :
+count-match **11 %** (18 % avec centrage vertical + exclusion des hampes). D'où
+très peu de positifs d'entraînement (40 à n=600, 74 à n=1500) et une détection
+médiocre (**précision 6–25 %**). Contaminants non filtrables géométriquement :
+fragments de ligatures entre notes beamées, altérations *inline*, points — eux
+aussi centrés sur la portée. Une détection aussi bruitée **dégraderait** la
+sortie MIDI → **laissée opt-in/OFF**, comme l'auto-armure.
+- **Pistes réelles (non tenues, hors budget WP2)** : corrélation de gabarit de
+  silence (état de l'art §4, contourne la sur-détection) ; meilleure isolation
+  des composantes (analyse hampes/ligatures) pour débloquer les positifs ;
+  gérer les silences/multi-pauses **en tête** (41 %, hors champ actuel).
 
 ### Limites connues (honnêtes, à améliorer)
 - **Altérations / armure = plafond n°1, CUL-DE-SAC avéré (méthodes classiques)** :
@@ -330,14 +340,18 @@ silence (durées dominantes : croche, noire, blanche).
 - **Durées** : nettement améliorées par le k-NN (RA 35 → 69). Restent limitées
   par les blanches/rondes (peu d'exemples d'entraînement) et les notes pointées
   (durée de base seulement).
-- **Silences** : non décodés (seules les têtes le sont).
+- **Silences** : méthode implémentée (candidats + k-NN de forme, opt-in) mais
+  détection non fiable (même mur que l'armure : sur-détection des candidats,
+  count-match 11–18 %). Décodés uniquement si `rest_clf` fourni. Cf. section
+  dédiée.
 
 ### Étapes suivantes (à faire)
 - [ ] **Armure automatique (levier n°1, +15 NA)** : corriger fausses têtes près
   de la clef, isoler la bande d'armure (s'arrêter à la métrique), compter les
   altérations de façon robuste à la fragmentation (fusion de fragments, ou
   classif par composante dièse/bémol/autre au k-NN).
-- [ ] **Silences** — cf. WIP `omr/rests.py` (manque d'exemples positifs).
+- [ ] **Silences** — débloquer les positifs d'entraînement (meilleure détection
+  de candidats ou corrélation de gabarit) pour activer `rest_clf` par défaut.
 - [ ] **Durées** — plus de données d'entraînement (corpus = 87 k incipits),
   gérer les notes pointées.
 - [ ] **WP3** — portage C++ ; **WP4** — CI, GitLab Pages, issues.
