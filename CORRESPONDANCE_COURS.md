@@ -52,3 +52,10 @@ avec un élément structurant **horizontal** puis soustraction ». Testée, cett
 variante **abîme les ligatures** (elles aussi horizontales et longues). Nous
 utilisons donc une ouverture par élément structurant **vertical**, qui reste une
 ouverture morphologique (même notion, TIFO2 §5.3) mais préserve les ligatures.
+
+**Chemins stables (Cardoso 2009, annoncé §2) testés.** Implémentés
+(`remove_staff_lines_stable_paths`, plus court chemin par programmation
+dynamique suivant l'encre) et comparés à `combined` : **équivalents** sur PrIMuS
+(NA 55,9 vs 54,8). L'avantage attendu (suivre des lignes courbes/inclinées) ne
+s'exprime pas sur des partitions **imprimées et droites**. Retenu : `combined`.
+Les chemins stables restent pertinents pour du manuscrit/incliné.

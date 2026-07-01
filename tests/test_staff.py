@@ -4,6 +4,7 @@ from omr.staff import (
     StaffMetrics,
     estimate_metrics,
     remove_staff_lines,
+    remove_staff_lines_stable_paths,
     staff_line_rows,
 )
 
@@ -41,6 +42,16 @@ def test_remove_staff_lines_keeps_stem_and_head():
     assert out[:, 50].sum() > 20          # hampe conservée
     assert out[24:30, 46:52].any()        # tête conservée
     for r in [10, 18, 34, 42]:            # lignes effacées (hors hampe/tête)
+        assert not out[r, :45].any()
+
+
+def test_stable_paths_removes_line_keeps_symbols():
+    mask, _ = _synthetic_staff()
+    m = estimate_metrics(mask)
+    out = remove_staff_lines_stable_paths(mask, m)
+    assert out[:, 50].sum() > 20          # hampe conservée (traversée = pont)
+    assert out[24:30, 46:52].any()        # tête conservée
+    for r in [10, 18, 34, 42]:            # lignes effacées hors symboles
         assert not out[r, :45].any()
 
 
