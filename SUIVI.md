@@ -292,6 +292,18 @@ durées + décomposition pitch/rythme), puis itérations mesurées. Ordre réel 
    plein corrèle avec toute zone pleine (ligatures, clef, jonctions) ; il est
    moins discriminant que l'ouverture morphologique + filtre de forme sur la
    composante entière. **La morphologie actuelle reste supérieure.**
+10. **Essai — suppression de portée par chemins stables** (ABANDONNÉ pour le
+    défaut ; gardé comme expérience — méthode **annoncée** dans l'état de l'art
+    §2, Cardoso 2009). Plus court chemin gauche→droite suivant l'encre
+    (programmation dynamique) pour suivre chaque ligne, puis retrait des runs
+    fins le long du chemin avec pont (`remove_staff_lines_stable_paths`,
+    `scripts/benchmark_staff.py`). Mesure (n=250) : **NA 55,9 (combined) vs 54,8
+    (stable paths)**, PA_dia 88,7 vs 89,2 — **équivalent** (stable paths même un
+    peu en dessous, dans le bruit). Raison : PrIMuS est **imprimé et droit**,
+    l'avantage des chemins stables (lignes courbes/inclinées) ne s'exprime pas ;
+    `combined` gère déjà les lignes droites, et la fragmentation ligne↔symbole
+    est la même. → n'aide **pas** l'armure/les silences ici ; **utile seulement
+    sur du manuscrit/incliné**.
 
 ### Silences (rests) — méthode implémentée, opt-in (`omr/rest_knn.py`, `omr/rests.py`)
 Demandé par le sujet (« notes, clefs et silences »). Prévalence mesurée

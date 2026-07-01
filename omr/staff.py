@@ -118,6 +118,65 @@ def remove_staff_lines_targeted(mask: np.ndarray, metrics: StaffMetrics,
     return out
 
 
+def _stable_path(mask: np.ndarray, r0: int, band: int,
+                 move_penalty: float = 0.4) -> np.ndarray:
+    # plus court chemin gauche->droite suivant l'encre, dans une bande autour de
+    # r0 (chemins stables, Cardoso 2009) : coût 0 sur l'encre, 1 sur le fond,
+    # pénalité de déplacement vertical pour préférer une ligne lisse.
+    h, w = mask.shape
+    lo, hi = max(0, r0 - band), min(h, r0 + band + 1)
+    cost = np.where(mask[lo:hi, :], 0.0, 1.0)
+    R = cost.shape[0]
+    dp = np.full((R, w), np.inf)
+    back = np.zeros((R, w), dtype=np.int8)
+    dp[:, 0] = cost[:, 0]
+    for c in range(1, w):
+        prev = dp[:, c - 1]
+        up = np.full(R, np.inf); up[1:] = prev[:-1] + move_penalty   # depuis i-1
+        down = np.full(R, np.inf); down[:-1] = prev[1:] + move_penalty  # depuis i+1
+        stack = np.vstack([up, prev, down])
+        choice = np.argmin(stack, axis=0).astype(np.int8)
+        dp[:, c] = cost[:, c] + np.min(stack, axis=0)
+        back[:, c] = choice
+    path = np.empty(w, dtype=np.int64)
+    i = int(np.argmin(dp[:, w - 1]))
+    for c in range(w - 1, -1, -1):
+        path[c] = lo + i
+        ch = back[i, c]
+        if ch == 0:
+            i = max(0, i - 1)
+        elif ch == 2:
+            i = min(R - 1, i + 1)
+    return path
+
+
+def remove_staff_lines_stable_paths(mask: np.ndarray, metrics: StaffMetrics,
+                                    rows: list[int] | None = None) -> np.ndarray:
+    if rows is None:
+        rows = staff_line_rows(mask)
+    if len(rows) < 2:
+        return remove_staff_lines(mask, metrics)
+    out = mask.copy()
+    band = max(metrics.line_height, round(0.4 * metrics.line_space))
+    max_run = 2 * metrics.line_height
+    h, w = mask.shape
+    for r0 in rows:
+        path = _stable_path(mask, r0, band)
+        for c in range(w):
+            rp = int(path[c])
+            if not mask[rp, c]:
+                continue
+            top = rp
+            while top - 1 >= 0 and mask[top - 1, c]:
+                top -= 1
+            bot = rp
+            while bot + 1 < h and mask[bot + 1, c]:
+                bot += 1
+            if bot - top + 1 <= max_run:  # trait fin = ligne ; sinon symbole -> pont
+                out[top:bot + 1, c] = False
+    return out
+
+
 def remove_staff_lines_runlength(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
     out = mask.copy()
     threshold = 2 * metrics.line_height
