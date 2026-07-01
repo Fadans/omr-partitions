@@ -24,8 +24,8 @@ REMOVERS = {
 }
 
 
-def make_prepared(remover):
-    def prep(sample, distorted=False):
+def make_prepared(remover, distorted=False):
+    def prep(sample, _distorted=False):
         path = sample.distorted if distorted else sample.png
         mask = preprocess(load_gray(path), adaptive=distorted)
         metrics = estimate_metrics(mask)
@@ -59,12 +59,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--k", type=int, default=5)
+    ap.add_argument("--distorted", action="store_true",
+                    help="images Camera-PrIMuS déformées (perspective/courbure)")
     args = ap.parse_args()
     samples = list_samples("base_1/Corpus", limit=args.n)
     split = int(0.7 * len(samples))
+    print(f"images: {'DÉFORMÉES (Camera-PrIMuS)' if args.distorted else 'propres'}")
 
     for name, remover in REMOVERS.items():
-        prep = make_prepared(remover)
+        prep = make_prepared(remover, distorted=args.distorted)
         dur = DurationClassifier(k=args.k).fit_samples(samples[:split], prep)
         acc, ratio = evaluate(samples[split:], prep, dur)
         m = lambda k: np.mean(acc[k]) if acc[k] else 0.0
