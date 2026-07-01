@@ -26,7 +26,10 @@ def prepared(sample: PrimusSample, distorted: bool = False):
 
 
 def leftmost_tall(comps: list[Component], metrics: StaffMetrics) -> Component | None:
-    tall = [c for c in comps if c.height >= 2 * metrics.line_space]
+    # clef = composante haute ET assez large (exclut barres de mesure et
+    # résidus de portée, fins, qui sont hauts mais très étroits).
+    tall = [c for c in comps if c.height >= 2 * metrics.line_space
+            and c.width >= 0.5 * metrics.staff_unit]
     if not tall:
         return None
     return min(tall, key=lambda c: c.x1)

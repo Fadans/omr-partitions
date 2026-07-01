@@ -9,6 +9,7 @@ from PIL import Image
 from .io_primus import PrimusSample, load_gray, list_samples, parse_semantic
 from .preprocess import preprocess
 from .decode import decode
+from .duration_knn import load_default
 from .heads import detect_heads
 from .midi import write_midi
 from .segment import Component, segment
@@ -62,7 +63,7 @@ def demo(sample: PrimusSample, out_dir: str) -> None:
         if tag == "clean" and os.path.exists(sample.semantic):
             with open(sample.semantic, encoding="utf-8") as f:
                 clef = f.read().split()[0]
-            notes = decode(mask, nostaff, metrics, clef)
+            notes = decode(mask, nostaff, metrics, clef, dur_clf=load_default())
             mid = os.path.join(out_dir, f"{sample.sample_id}.mid")
             write_midi(notes, mid)
             seq = " ".join(f"{n['pitch']}/{n['duration'][:4]}" for n in notes)

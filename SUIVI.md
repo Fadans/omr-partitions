@@ -195,25 +195,96 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
   préservant les contours / reconstruction de symboles) avant d'activer la
   détection automatique dans le pipeline.
 
-### Banc d'essai PA/RA/NA (`scripts/benchmark.py`, n=300)
-« simple » = sans armure et sans notes creuses (le cas géré par la chaîne).
+### Banc d'essai PA/RA/NA (`scripts/benchmark.py`)
+« simple » = sans armure et sans notes creuses. **Split train/test disjoint**
+(70/30) : le classifieur de durées est entraîné sur la partie *train*,
+l'évaluation ne porte que sur la partie *test*. Table principale : n=800
+(test=240) ; rappel géométrique mesuré à n=400 (test=120).
 
 | Sous-ensemble | N | PA strict | PA diat. | RA | NA |
 |---|---|---|---|---|---|
-| PrIMuS simple (auto) | 58 | 75,8 | 80,2 | 41,2 | 37,6 |
-| PrIMuS général (auto) | 300 | 60,4 | 80,2 | 42,5 | 30,9 |
-| PrIMuS général (armure oracle) | 300 | 77,3 | 80,2 | 43,4 | 39,7 |
+| **Durées géométriques (ancien, n=400)** | | | | | |
+| PrIMuS simple | 19 | 65,9 | 67,6 | 37,8 | 35,4 |
+| PrIMuS général | 120 | 56,4 | 75,0 | 35,4 | 26,0 |
+| **Durées k-NN (nouveau, défaut, n=800)** | | | | | |
+| PrIMuS simple | 61 | 83,5 | 85,5 | **77,3** | **74,1** |
+| PrIMuS général | 240 | 65,9 | 83,5 | **71,2** | **56,1** |
+| PrIMuS général (armure oracle, n=400) | 120 | 82,1 | 84,3 | 69,4 | **66,2** |
 
-Lecture : hauteurs correctes (80 % diat.) ; l'armure non lue coûte ~17 pts de PA
-stricte (oracle 77 vs 60) ; le rythme reste le point faible (ligatures
-partielles, notes pointées).
+**Gain majeur — classifieur de durées k-NN** (`omr/duration_knn.py`). Analyse
+de la matrice de confusion des durées (`scripts/diag_full.py`) : les règles
+géométriques (`_count_beams`) confondaient massivement noire↔croche et
+double-croche↔croche (à cette résolution une ligature fait ~3 px). Remplacées
+par un **descripteur de forme (projections + géométrie) de la région
+tête+hampe+ligature classé au k-NN** (cohérent avec clef/armure ; MLRF L1/L3).
+*Cohérence état de l'art* : notre livrable 1 §4 prévoit explicitement de décrire
+les symboles « par quelques mesures caractéristiques […] moments de Hu, puis
+[de confier] le classement à un algorithme simple tel que les k plus proches
+voisins ». Le livrable 1 §5 décrivait la durée par voie **géométrique** (tête
+pleine/vide, hampe, ligatures) ; on **étend** donc la méthode k-NN déjà prévue
+(pour clef/silences/altérations) à la durée, la géométrie seule s'étant révélée
+peu fiable. Ce n'est pas une méthode étrangère au projet, mais celle déjà
+retenue, appliquée à une catégorie de plus.
+Sur le même jeu de test (notes bien alignées) la précision de durée passe de
+**39 % → 79 %** ; bout-en-bout **RA 35 → 69**, **NA 26 → 51** (doublée).
+La PA monte aussi (56 → 64) : des durées correctes améliorent l'alignement par
+distance d'édition. Un masque de ligatures par **ouverture morphologique
+horizontale** (`decode.beam_mask`, TIFO2 §5.3) fournit un descripteur robuste.
+Modèle entraîné/sauvé par `scripts/train_duration.py` → `models/duration_knn.npz`
+(chargé par défaut dans `omr/cli.py`).
 
-**Historique des gains** :
-- *Comptage de ligatures* (`_count_beams`) : RA général 34,8 → 42,6 ;
-  NA 26,9 → 31,8. (Point d'augmentation testé puis retiré : faux positifs.)
+**Plafond restant = l'armure.** L'oracle montre **+15 NA** (51 → 66) : c'est
+désormais le levier n°1, car le rythme étant réglé, corriger les altérations se
+convertit directement en NA. Voir limites ci-dessous.
+
+**Historique des gains antérieurs** :
 - *Suppression de portée combinée* (cf. étape 3) : PA diatonique général
   77,9 → **80,2** (têtes creuses enfin détectées) ; détection du **type**
   d'armure 51 → 67 %.
+
+#### Journal détaillé de la session d'amélioration (essais gardés / abandonnés)
+Démarche : diagnostic d'abord (`scripts/diag_full.py` — matrice de confusion des
+durées + décomposition pitch/rythme), puis itérations mesurées. Ordre réel :
+
+1. **Diagnostic** : constat que **NA est plafonnée par le rythme** (RA ≈ 43 ≪
+   PA ≈ 60 ; une note juste exige pitch ET durée). La confusion des durées
+   révèle un biais massif vers la croche : **noire→croche 269**, double-croche→
+   croche 293, blanche→croche/double 90. Cause : `_count_beams` déclarait une
+   ligature dès qu'il y avait un peu d'encre latérale (défaut `beams=1`).
+2. **Essai A — contiguïté stricte** (ABANDONNÉ) : n'accepter la ligature que si
+   l'encre est contiguë à la hampe (arrêt au 1er trou) + extension min 0,5u.
+   Résultat : **RA 42,7 → 32,2** — cela tuait les **vraies** ligatures/crochets
+   (croche 86,8 → 58,5 %, double-croche 43,6 → 18,4 %), car à ~3 px d'épaisseur
+   le scan colonne-par-colonne a des trous. → **reverté**.
+3. **Essai B — porte de couverture** (ABANDONNÉ) : exiger qu'une fraction ≥ 40 %
+   des colonnes scannées portent une ligature. Résultat : **RA inchangée
+   (42,7)** — l'encre parasite (ligature d'un groupe **voisin** captée par la
+   portée de scan de 1,6u) couvre elle aussi > 40 %. → **remplacé**.
+4. **Essai C — masque de ligatures par ouverture morphologique horizontale**
+   (`decode.beam_mask`, GARDÉ comme brique) : un ES horizontal isole les traits
+   longs (ligatures), efface hampes fines et têtes rondes (TIFO2 §5.3). Le
+   comptage devient plus propre : **RA 42,7 → 43,9**, double-croches 43,6 →
+   57,1 %. Mais **noire→croche persiste (266)** : à cette résolution la
+   géométrie fine reste fragile (sur- ET sous-comptage, cf. `debug` supprimé).
+5. **Pivot — classifieur k-NN de durées** (GARDÉ, méthode par défaut) : voir
+   ci-dessus. `beam_mask`/`_count_beams` de l'essai C ne sont **pas jetés** :
+   ils restent (a) repli géométrique quand aucun modèle n'est fourni
+   (`decode(..., dur_clf=None)`), (b) une **feature** du descripteur k-NN.
+6. **Armure automatique** (testée, NON intégrée) : mesurée avant ET après le
+   k-NN (`scripts/benchmark_autokey.py`) → apport réel +0,3 à +0,5 NA seulement,
+   pour un oracle à +8 puis +16. Diagnostic du comptage d'altérations
+   (`diag_keycount`, depuis retiré) : **17 %** de comptage exact, sous-comptage
+   systématique. → **laissée désactivée** (une armure fausse dégrade la NA) ;
+   plafond oracle documenté (limites ci-dessous).
+7. **Correctif `leftmost_tall`** (GARDÉ) : la clef était parfois une barre de
+   mesure fine (haute mais étroite). Ajout d'un filtre de largeur (≥ 0,5u).
+   N'affecte que les expériences clef/armure — le décodage principal prend la
+   clef dans la vérité-terrain (`toks[0]`).
+8. **Essai — suppression des fausses têtes dans la zone de la clef** (ABANDONNÉ) :
+   écarter les têtes dont le centre est à gauche du bord droit de la clef (une
+   note ne peut y être). Mesure : **NA générale 51,4 → 50,9** (léger recul) — le
+   détecteur de bord de clef supprime parfois de **vraies premières notes**
+   (dégât collatéral > bénéfice). → reverté.
 
 ### Silences (rests) — WIP, non intégré (`omr/rests.py`, `scripts/rest_experiment.py`)
 Demandé par le sujet (« notes, clefs et silences »). 59 % des incipits ont ≥1
@@ -233,19 +304,42 @@ silence (durées dominantes : croche, noire, blanche).
   commencent par un silence/multi-pause, hors du champ actuel).
 
 ### Limites connues (honnêtes, à améliorer)
+- **Altérations / armure = plafond n°1, CUL-DE-SAC avéré (méthodes classiques)** :
+  théorie + intégration faites (l'oracle donne **NA 51 → 66**, PA stricte
+  64 → 82). Mais **aucune** détection automatique n'atteint une précision
+  *nette-positive*. Comptage des altérations mesuré sur 4 approches distinctes :
+  - k-NN holistique sur profil de projection du strip : **33 %** (puis 21 % en
+    ré-mesure avec correctif clef, beaucoup d'échantillons rejetés) ;
+  - regroupement géométrique en x des composantes : **17 %** ;
+  - fermeture morphologique + composantes connexes : **15 %**.
+
+  Tous **sous la baseline « toujours 0 »** (~40 % de CM). Bout-en-bout l'auto
+  n'apporte que +0,3 NA (`scripts/benchmark_autokey` : none 53,1 → auto 53,4 →
+  oracle 69,1). Trois causes cumulées, diagnostiquées : (1) la suppression de
+  portée **fragmente** les symboles fins (dièse/bémol ≈ 3 px de trait, cassés en
+  plusieurs morceaux) ; (2) des **fausses têtes** près de la clef corrompent la
+  bande ; (3) la bande clef→1re note contient aussi la **métrique,
+  multi-pauses, barres et silences**. Une armure *fausse* (≈ 75 % du temps)
+  dégraderait la NA sur toutes les notes de l'incipit. → l'auto reste
+  **désactivé** ; l'oracle documente le gain **théoriquement** atteignable.
+  Piste réelle (non tentée) : ré-analyser l'armure sur une image **sans
+  suppression de portée** (les altérations y seraient entières mais collées aux
+  lignes) ou par corrélation de gabarit robuste — hors budget WP2.
 - **Têtes creuses** (blanches/rondes) : nettement améliorées par la suppression
   combinée (cf. étape 3) ; restent un peu moins fiables que les têtes pleines.
-- **Altérations / armure** : théorie + intégration faites (PA stricte → 71 %
-  avec armure oracle), mais détection automatique encore ~50 % (fragmentation).
-  Inline accidentals (hors armure) non gérées.
-- **Durées fines** : croche vs double croche (comptage de ligatures) non
-  distinguées → RA limitée.
+- **Durées** : nettement améliorées par le k-NN (RA 35 → 69). Restent limitées
+  par les blanches/rondes (peu d'exemples d'entraînement) et les notes pointées
+  (durée de base seulement).
 - **Silences** : non décodés (seules les têtes le sont).
 
 ### Étapes suivantes (à faire)
-- [ ] **Étape 5b (suite)** — silences, altérations (armure), tête pleine/vide
-  affinée, intégration du classifieur de clef dans le pipeline complet.
-- [ ] **Amélioration têtes creuses** (gabarit elliptique / corrélation).
+- [ ] **Armure automatique (levier n°1, +15 NA)** : corriger fausses têtes près
+  de la clef, isoler la bande d'armure (s'arrêter à la métrique), compter les
+  altérations de façon robuste à la fragmentation (fusion de fragments, ou
+  classif par composante dièse/bémol/autre au k-NN).
+- [ ] **Silences** — cf. WIP `omr/rests.py` (manque d'exemples positifs).
+- [ ] **Durées** — plus de données d'entraînement (corpus = 87 k incipits),
+  gérer les notes pointées.
 - [ ] **WP3** — portage C++ ; **WP4** — CI, GitLab Pages, issues.
 
 ---

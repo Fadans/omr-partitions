@@ -22,6 +22,8 @@ Le prototype mobilise **uniquement des notions vues en TIFO 1, TIFO 2 et MLRF**
 | `classify` (étape 5b, à venir) | Descripteurs de forme OCR : moments de Hu, histogrammes de projection, descripteurs de Fourier | MLRF L1 (descripteurs OCR) |
 | `classify` — décision | Plus proche voisin / matching (distance) | MLRF L3 (matching, bruteforce/kD-tree) |
 | `key_signature` / lecture armure | Descripteur de bande (projections) + k-NN ; théorie musicale (ordre fixe des altérations) | MLRF L1/L3 |
+| `decode.beam_mask` | Ouverture morphologique **horizontale** : isole les ligatures (traits horizontaux longs), supprime hampes fines et têtes rondes | TIFO2 §5.3 |
+| `duration_knn` (durées) | Descripteurs de forme (projections + géométrie) de la région tête+hampe+ligature → **k-NN** ; remplace des règles géométriques bricolées | MLRF L1 (descripteurs), L3 (matching) |
 | `metrics.note_scores` | Distance d'édition (Levenshtein) pour l'alignement | MLRF L1 (note 1) |
 | `metrics.detection_f1` | IoU (indice de Jaccard), précision/rappel/F1 | MLRF (évaluation) |
 

@@ -4,6 +4,7 @@ import numpy as np
 
 from .heads import detect_heads
 from .key_signature import apply_alteration
+from .morph import opening, rect
 from .segment import Component
 from .staff import StaffMetrics, _column_runs, staff_line_rows
 
@@ -62,44 +63,36 @@ def _find_stem(nostaff: np.ndarray, head: Component, metrics: StaffMetrics):
     return best[1], best[2], best[3]
 
 
-def _count_beams(nostaff: np.ndarray, head: Component, stem, metrics: StaffMetrics) -> int:
+def beam_mask(nostaff: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
+    # Ouverture morphologique horizontale (TIFO2 §5.3) : isole les traits
+    # horizontaux longs = ligatures ; hampes fines et têtes rondes disparaissent.
+    width = max(3, int(1.1 * metrics.staff_unit))
+    return opening(nostaff, rect(1, width))
+
+
+def _count_beams(beams_mask: np.ndarray, head: Component, stem,
+                 metrics: StaffMetrics) -> int:
     stem_x, top, bottom = stem
     head_cy = (head.y1 + head.y2) / 2
     u = metrics.staff_unit
-    h, w = nostaff.shape
+    h, w = beams_mask.shape
     if top < head_cy:
-        y0, y1 = max(0, top - metrics.line_height), min(h, top + 2 * u)
+        y0, y1 = max(0, top - metrics.line_height), min(h, top + 3 * u)
     else:
-        y0, y1 = max(0, bottom - 2 * u), min(h, bottom + metrics.line_height)
+        y0, y1 = max(0, bottom - 3 * u), min(h, bottom + metrics.line_height)
 
-    reach = int(1.6 * u)
-    left = nostaff[y0:y1, max(0, stem_x - reach):stem_x].sum()
-    right = nostaff[y0:y1, stem_x + 1:stem_x + 1 + reach].sum()
-    if max(left, right) == 0:
-        return 0
-    if right >= left:
-        cols = range(stem_x + 2, min(w, stem_x + reach))
-    else:
-        cols = range(max(0, stem_x - reach), stem_x - 1)
-
-    max_beam = 1.4 * u
-    counts = []
-    for x in cols:
-        runs = sum(1 for s, ln, val in zip(*_column_runs(nostaff[y0:y1, x]))
-                   if val and metrics.line_height <= ln <= max_beam)
-        if runs:
-            counts.append(runs)
-    if not counts:
-        return 0
-    counts = np.array(counts)
-    beams = 1
-    for k in (2, 3, 4):
-        if np.mean(counts >= k) >= 0.3:
-            beams = k
-    return beams
+    # au niveau de la hampe, chaque ligature est un segment vertical distinct :
+    # on compte les runs verticaux dans le masque de ligatures, autour de la hampe.
+    best = 0
+    for x in range(max(0, stem_x - 1), min(w, stem_x + 2)):
+        runs = sum(1 for s, ln, val in zip(*_column_runs(beams_mask[y0:y1, x]))
+                   if val and ln <= 1.4 * u)
+        best = max(best, runs)
+    return best
 
 
-def head_duration(nostaff: np.ndarray, head: Component, metrics: StaffMetrics) -> str:
+def head_duration(nostaff: np.ndarray, head: Component, metrics: StaffMetrics,
+                  beams_mask: np.ndarray | None = None) -> str:
     crop = nostaff[head.y1:head.y2, head.x1:head.x2]
     hollow = crop.sum() / max(1, crop.size) < 0.55
     stem = _find_stem(nostaff, head, metrics)
@@ -108,7 +101,9 @@ def head_duration(nostaff: np.ndarray, head: Component, metrics: StaffMetrics) -
         return "whole" if hollow else "quarter"
     if hollow:
         return "half"
-    return _BEAM_DURATION.get(_count_beams(nostaff, head, stem, metrics),
+    if beams_mask is None:
+        beams_mask = beam_mask(nostaff, metrics)
+    return _BEAM_DURATION.get(_count_beams(beams_mask, head, stem, metrics),
                               "sixty_fourth")
 
 
@@ -134,18 +129,24 @@ def clean_heads(heads: list[Component]) -> list[Component]:
 
 def decode(mask: np.ndarray, nostaff: np.ndarray, metrics: StaffMetrics,
            clef_token: str, heads: list[Component] | None = None,
-           alt_map: dict[str, str] | None = None) -> list[dict]:
+           alt_map: dict[str, str] | None = None,
+           dur_clf=None) -> list[dict]:
     if heads is None:
         heads = detect_heads(nostaff, metrics)
     heads = clean_heads(heads)
     bottom_y, half = staff_geometry(mask, metrics)
     v_ref, d_ref = clef_reference(clef_token)
+    bmask = beam_mask(nostaff, metrics)
 
     notes = []
     for h in sorted(heads, key=lambda c: c.x1):
         pitch = head_pitch(h, bottom_y, half, v_ref, d_ref)
+        if dur_clf is not None:
+            duration = dur_clf.predict_head(nostaff, bmask, h, metrics)
+        else:
+            duration = head_duration(nostaff, h, metrics, bmask)
         notes.append({
             "pitch": apply_alteration(pitch, alt_map) if alt_map else pitch,
-            "duration": head_duration(nostaff, h, metrics),
+            "duration": duration,
         })
     return notes
