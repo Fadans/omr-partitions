@@ -37,6 +37,15 @@ Le prototype mobilise **uniquement des notions vues en TIFO 1, TIFO 2 et MLRF**
   (MLRF L2) : appariement de symboles complexes si besoin.
 - **Homographie** (MLRF L3) : redressement perspectif des photos distordues.
 
+## Détection des têtes : morphologie vs corrélation de gabarit (testé)
+L'état de l'art propose deux options (§4) : **corrélation de gabarit** (« comparer
+à un modèle de référence ») ou **ouverture morphologique** par ES ovale. Les deux
+ont été implémentées (`heads.detect_heads` vs `heads.detect_heads_template`) et
+comparées (`scripts/benchmark_heads.py`). L'ouverture morphologique **gagne
+nettement** (ratio têtes/GT 1,07 vs 2,1 ; NA 51 vs 33) : un gabarit plein réagit
+à toute zone pleine (ligatures, clef), alors que la morphologie + filtre de forme
+sur la composante entière est bien plus discriminante. Défaut = morphologie.
+
 ## Écart documenté vs état de l'art (livrable 1)
 L'état de l'art décrit la suppression des portées par « ouverture morphologique
 avec un élément structurant **horizontal** puis soustraction ». Testée, cette

@@ -27,6 +27,53 @@ def fill_holes(mask: np.ndarray, max_hole_area: int | None = None) -> np.ndarray
     return out
 
 
+def _ellipse(a: int, b: int) -> np.ndarray:
+    yy, xx = np.ogrid[-b:b + 1, -a:a + 1]
+    return (xx * xx) / (a * a) + (yy * yy) / (b * b) <= 1.0
+
+
+def detect_heads_template(mask: np.ndarray, metrics: StaffMetrics,
+                          thresh: float = 0.62) -> list[Component]:
+    """Détection de têtes par corrélation de gabarit (état de l'art §4, MLRF L3).
+
+    Recouvrement d'un gabarit elliptique glissé sur l'image (têtes bouchées) ;
+    on garde les maxima locaux au-dessus d'un seuil (suppression des non-maxima).
+
+    NOTE : expérience comparative (cf. `scripts/benchmark_heads.py`). Le gabarit
+    plein corrèle avec toute zone pleine assez grande (ligatures, clef,
+    jonctions) -> sur-détection ~2x même à seuil élevé. L'ouverture
+    morphologique (`detect_heads`) reste supérieure et est utilisée par défaut.
+    """
+    solid = fill_holes(mask, max_hole_area=2 * metrics.line_space ** 2)
+    a = max(2, round(0.50 * metrics.line_space))
+    b = max(2, round(0.42 * metrics.line_space))
+    templ = _ellipse(a, b)
+    area = int(templ.sum())
+    h, w = solid.shape
+    sh, sw = templ.shape
+    cy, cx = sh // 2, sw // 2
+    padded = np.pad(solid, ((cy, sh - cy - 1), (cx, sw - cx - 1)))
+    acc = np.zeros((h, w), dtype=np.int32)
+    for dy, dx in np.argwhere(templ):
+        acc += padded[dy:dy + h, dx:dx + w]
+    score = acc.astype(np.float64) / area
+
+    ys, xs = np.nonzero(score >= thresh)
+    order = np.argsort(score[ys, xs])[::-1]
+    radius = max(2, int(0.75 * metrics.line_space))
+    taken: list[tuple[int, int]] = []
+    heads: list[Component] = []
+    for i in order:
+        y, x = int(ys[i]), int(xs[i])
+        if any(abs(x - tx) < radius and abs(y - ty) < radius for tx, ty in taken):
+            continue
+        taken.append((x, y))
+        heads.append(Component(len(heads) + 1, x - a, y - b, x + a + 1, y + b + 1,
+                               area))
+    heads.sort(key=lambda c: c.x1)
+    return heads
+
+
 def detect_heads(mask: np.ndarray, metrics: StaffMetrics,
                  radius_ratio: float = 0.40,
                  min_fill: float = 0.55,

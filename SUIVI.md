@@ -285,6 +285,13 @@ durées + décomposition pitch/rythme), puis itérations mesurées. Ordre réel 
    note ne peut y être). Mesure : **NA générale 51,4 → 50,9** (léger recul) — le
    détecteur de bord de clef supprime parfois de **vraies premières notes**
    (dégât collatéral > bénéfice). → reverté.
+9. **Essai — détection des têtes par corrélation de gabarit** (ABANDONNÉ pour le
+   défaut ; gardé comme expérience) : gabarit elliptique glissé + maxima locaux
+   (`detect_heads_template`, `scripts/benchmark_heads.py`). Mesure : **ratio
+   têtes/GT 2,1–3,0** (vs **1,07** en morphologie) → **NA 51 → 33**. Un gabarit
+   plein corrèle avec toute zone pleine (ligatures, clef, jonctions) ; il est
+   moins discriminant que l'ouverture morphologique + filtre de forme sur la
+   composante entière. **La morphologie actuelle reste supérieure.**
 
 ### Silences (rests) — méthode implémentée, opt-in (`omr/rest_knn.py`, `omr/rests.py`)
 Demandé par le sujet (« notes, clefs et silences »). Prévalence mesurée
