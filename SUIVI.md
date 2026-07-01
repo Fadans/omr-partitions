@@ -302,8 +302,15 @@ durées + décomposition pitch/rythme), puis itérations mesurées. Ordre réel 
     peu en dessous, dans le bruit). Raison : PrIMuS est **imprimé et droit**,
     l'avantage des chemins stables (lignes courbes/inclinées) ne s'exprime pas ;
     `combined` gère déjà les lignes droites, et la fragmentation ligne↔symbole
-    est la même. → n'aide **pas** l'armure/les silences ici ; **utile seulement
-    sur du manuscrit/incliné**.
+    est la même. → n'aide **pas** l'armure/les silences sur du imprimé droit.
+    **Confirmation sur images DÉFORMÉES** (Camera-PrIMuS, `--distorted`, portées
+    courbes) : les chemins stables **améliorent la lecture des hauteurs**
+    (PA_dia **38,3 → 43,2**, PA 29,4 → 31,5) — l'avantage annoncé (suivre des
+    lignes courbes/inclinées) **s'exprime bien**. La NA globale reste basse
+    (~16 %) car le pipeline sur déformé est bridé ailleurs (binarisation
+    adaptative, détection de têtes). **Bilan** : défaut `combined` sur imprimé ;
+    chemins stables **pertinents et validés** pour le cas déformé/manuscrit
+    (comme prévu dans l'état de l'art §2).
 
 ### Silences (rests) — méthode implémentée, opt-in (`omr/rest_knn.py`, `omr/rests.py`)
 Demandé par le sujet (« notes, clefs et silences »). Prévalence mesurée

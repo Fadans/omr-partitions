@@ -55,7 +55,9 @@ ouverture morphologique (même notion, TIFO2 §5.3) mais préserve les ligatures
 
 **Chemins stables (Cardoso 2009, annoncé §2) testés.** Implémentés
 (`remove_staff_lines_stable_paths`, plus court chemin par programmation
-dynamique suivant l'encre) et comparés à `combined` : **équivalents** sur PrIMuS
-(NA 55,9 vs 54,8). L'avantage attendu (suivre des lignes courbes/inclinées) ne
-s'exprime pas sur des partitions **imprimées et droites**. Retenu : `combined`.
-Les chemins stables restent pertinents pour du manuscrit/incliné.
+dynamique suivant l'encre) et comparés à `combined`. Sur PrIMuS **imprimé/droit**
+: **équivalents** (NA 55,9 vs 54,8) — l'avantage n'a pas lieu d'être. Sur
+Camera-PrIMuS **déformé** (`--distorted`) : chemins stables **meilleurs pour les
+hauteurs** (PA_dia 38,3 → 43,2), confirmant l'avantage annoncé sur lignes
+courbes. Défaut retenu : `combined` (imprimé) ; chemins stables validés pour le
+cas déformé/manuscrit.
