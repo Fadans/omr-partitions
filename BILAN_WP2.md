@@ -107,3 +107,36 @@ Contexte littérature (`references.bib`) : en OMR **classique**, une exactitude
 note-level de 50–80 % sur données réelles est attendue (Rebelo 2012,
 Calvo-Zaragoza 2020) ; seules les approches **réseau** dépassent ~90 % sur PrIMuS.
 Nos chiffres sont donc cohérents avec l'état de l'art du classique.
+
+## 6. Glossaire / FAQ soutenance
+
+- **Armure** (*key signature*) : les dièses (♯) / bémols (♭) placés juste après
+  la clef, valables pour tout le morceau (ex. 2 ♯ = Ré majeur → tous les fa/do
+  sont ♯). Sans la lire, on met de mauvaises altérations sur les notes.
+- **Silence** (*rest*) : symbole de **pause** (on ne joue rien), avec une durée
+  comme les notes (soupir = noire, demi-soupir = croche…).
+- **Détection « auto » vs « oracle »** :
+  - *auto* = le programme trouve l'info **depuis les pixels** de l'image.
+  - *oracle* = on lui **donne la bonne réponse** (vérité-terrain) — c'est un
+    outil de **diagnostic**, pas une méthode du pipeline, **non annoncé** dans
+    l'état de l'art.
+  - « **armure oracle** » encadre la réalité : la ligne **sans oracle** = notre
+    programme réel (armure désactivée, aucune altération, NA 50) ; la ligne
+    **oracle** = armure parfaite (NA 62). L'écart = le coût exact de l'armure
+    non lue. Notre détecteur auto est trop faible (+0,3 NA) → **laissé OFF**.
+- **k-NN (k plus proches voisins)** : ce **n'est pas** un réseau de neurones.
+  Pour classer une forme, on regarde les k exemples connus les plus ressemblants
+  et on vote. « Entraîner » = **mémoriser des exemples** (aucun poids, aucun
+  gradient). Méthode MLRF, autorisée par la contrainte « sans réseau ».
+- **Hough** (transformée de) : détection de **droites** par vote des pixels ;
+  utile pour des portées **inclinées**. Chez nous : testée, meilleure que la
+  projection sur images déformées (99 % vs 61 %). ≠ **Hu**.
+- **Hu (moments de)** : 7 **descripteurs de forme** invariants (position/
+  rotation/taille), utilisés dans nos classifieurs k-NN. Rien à voir avec Hough
+  malgré le nom.
+- **Chemins stables** (Cardoso 2009) : suppression de portées par plus court
+  chemin suivant la ligne ; utile pour lignes **courbes**. Testée : équivalente
+  sur imprimé, meilleure sur déformé (PA diat. 38 → 43).
+- **PA diatonique vs stricte** : diatonique = hauteur juste **en ignorant** les
+  altérations ; stricte = altérations comprises. L'écart entre les deux = ce que
+  coûte l'armure.
