@@ -1,0 +1,67 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Encodage / langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+
+% --- Mise en page compacte ---
+\usepackage[a4paper,margin=1.9cm]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.2em}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{7pt}{2pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection.}{0.5em}{}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\title{\vspace{-1.2cm}\textbf{Livrable 3 --- Liste des tests et de leurs scores\\[2pt]
+\large Analyse automatique de partitions musicales (OMR)}}
+
+\author{\normalsize Thibault Bourdoiseau \& Léo Li --- SAE TIFO 1 / TIFO 2 / MLRF}
+\date{\vspace{-8pt}\small \today}
+
+\begin{document}
+\maketitle
+\vspace{-10pt}
+
+Complément à la description et à l'évaluation du prototype (document \emph{main}). On liste les
+\textbf{tests unitaires} (validation du code) puis les \textbf{scores} de la version retenue (V2) selon les
+critères du livrable~2. Mesures sur CameraPrIMuS, split train/test disjoint~; PA/RA/NA en \%.
+
+\section{Tests unitaires (\texttt{uv run pytest})}
+$34$ tests automatiques valident chaque brique de la chaîne~: prétraitement (Otsu, médian, adaptatif),
+portées (métriques, localisation des 5 lignes, suppression), segmentation (composantes connexes), détection
+des têtes, descripteurs (Hu, projections), classifieurs de durée et de silence ($k$-NN), armure, export MIDI.
+\textbf{Résultat~: $34/34$ tests passent.}
+
+\section{Scores du prototype retenu (V2)}
+Banc d'essai bout-en-bout ($n=800$, test~$=240$ incipits disjoints), durées par classifieur $k$-NN.
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Sous-ensemble & $N$ & PA stricte & PA diat. & RA & NA \\
+\midrule
+PrIMuS simple  & 61  & 83{,}7 & 85{,}7 & 77{,}4 & 74{,}3 \\
+PrIMuS général & 240 & 66{,}1 & 83{,}7 & 71{,}4 & 56{,}2 \\
+général + armure oracle & 120 & 82{,}1 & 84{,}3 & 69{,}4 & 66{,}2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+PA stricte = hauteur avec altérations~; PA diat.\ = sans (l'écart mesure le coût de l'armure non lue). La
+ligne \emph{oracle} borne le gain d'une armure parfaitement lue. Reproduction~:
+\texttt{uv run python scripts/benchmark.py -{}-n 800} (et \texttt{-{}-key-oracle} pour l'oracle).
+
+\medskip
+\textit{Pour mémoire}, les scores de la baseline géométrique (V1, état de l'art §5) et le détail des essais
+intermédiaires (retenus / abandonnés) sont dans \texttt{SUIVI.md}.
+
+\end{document}

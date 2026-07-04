@@ -38,69 +38,65 @@
 \maketitle
 \vspace{-10pt}
 
-\section{Périmètre retenu}
-Le prototype transforme l'image d'une partition \textbf{monophonique} en une séquence de notes
-(hauteur~+~durée) exportée en MIDI, avec les seules notions TIFO~1, TIFO~2 et MLRF~\cite{rebelo2012,calvo2020}
---- \textbf{sans réseau de neurones}. L'état de l'art et le livrable~2 balisaient large (imprimé \emph{et}
-manuscrit, détection \emph{et} décodage). Nous avons fait le choix assumé de livrer une \textbf{chaîne
-complète et robuste sur un cas} --- l'imprimé et le déformé de \textbf{CameraPrIMuS} ($87\,678$ incipits, image
-$\rightarrow$ MIDI) --- plutôt qu'un prototype fragile étalé sur trois bases. Le manuscrit (MUSCIMA++~\cite{hajic2017})
-et le F1 de détection sur pages polyphoniques (DeepScoresV2~\cite{tuggener2020}) sont identifiés comme
-extensions hors périmètre du prototype (cf.~§\ref{sec:limites}). Code : NumPy + Pillow uniquement, pour un
-portage C++ direct au WP3.
+\section{Périmètre}
+Le prototype transforme l'image d'une partition monophonique en une séquence de notes (hauteur et durée)
+exportée en MIDI, avec les notions vues en cours et sans réseau de neurones. Il traite la base CameraPrIMuS
+($87\,678$ incipits), en version imprimée et en version déformée. Le manuscrit (MUSCIMA++~\cite{hajic2017}) et
+le F1 de détection sur pages polyphoniques (DeepScoresV2~\cite{tuggener2020}), envisagés au livrable~2, ne sont
+pas traités~: ils sortent du périmètre de ce prototype (voir §\ref{sec:limites}). Le code n'utilise que NumPy et
+Pillow, pour faciliter le portage C++ du WP3.
 
-\section{Chaîne de traitement retenue}
-L'image suit une chaîne classique~\cite{rebelo2012}~; chaque étape ne mobilise que des notions de cours
-(traçabilité complète dans \texttt{CORRESPONDANCE\_COURS.md}).
+\section{Chaîne de traitement}
+L'image suit une chaîne classique~\cite{rebelo2012}. Chaque étape correspond à une notion de cours (traçabilité
+dans \texttt{CORRESPONDANCE\_COURS.md}).
 \begin{enumerate}
-\item \textbf{Prétraitement} (\texttt{preprocess.py}, TIFO~1). Niveaux de gris $\rightarrow$ \textbf{filtre médian}
-(bruit) $\rightarrow$ binarisation par le \textbf{critère d'Otsu}~\cite{otsu1979} (imprimé) ou \textbf{seuil
-adaptatif} par image intégrale (photos à éclairage non uniforme).
-\item \textbf{Portées} (\texttt{staff.py}, TIFO~1/2). Épaisseur de ligne et interligne estimés par
-\textbf{longueurs de runs}~; les $5$ lignes localisées par \textbf{projection horizontale}. Suppression par
-\textbf{ouverture morphologique} (élément structurant vertical) \emph{unie} à un mécanisme de « pont » qui
-conserve les pixels là où un symbole traverse la ligne (\texttt{remove\_staff\_lines\_combined}) --- ce qui
-débloque les têtes creuses et les altérations.
-\item \textbf{Segmentation} (\texttt{segment.py}, TIFO~1/2). \textbf{Composantes connexes} 8-connexité
-(union-find à deux passes, NumPy pur) $\rightarrow$ une composante par symbole.
+\item \textbf{Prétraitement} (\texttt{preprocess.py}, TIFO~1). Conversion en niveaux de gris, filtre médian pour
+le bruit, puis binarisation par le critère d'Otsu~\cite{otsu1979} (imprimé) ou par seuil adaptatif calculé sur
+image intégrale (photos à éclairage non uniforme).
+\item \textbf{Portées} (\texttt{staff.py}, TIFO~1/2). Épaisseur de ligne et interligne estimés par longueurs de
+runs~; les cinq lignes sont localisées par projection horizontale. Les lignes sont ensuite supprimées par
+ouverture morphologique (élément structurant vertical), combinée à un mécanisme de « pont » qui conserve les
+pixels là où un symbole traverse la ligne (\texttt{remove\_staff\_lines\_combined}), ce qui préserve les têtes
+creuses et les altérations.
+\item \textbf{Segmentation} (\texttt{segment.py}, TIFO~1/2). Étiquetage en composantes connexes (8-connexité,
+union-find à deux passes) donnant une composante par symbole.
 \item \textbf{Détection des têtes} (\texttt{heads.py}, TIFO~2). Bouchage des petits trous (reconstruction
-géodésique) $\rightarrow$ \textbf{ouverture par un disque} (granulométrie) $\rightarrow$ filtrage par taille,
-allongement et remplissage. Détecte les têtes y compris dans les groupes ligaturés.
-\item \textbf{Hauteurs} (\texttt{decode.py}). Géométrie de la portée (ligne du bas + demi-interligne)
-$\rightarrow$ position verticale de la tête $\rightarrow$ lettre + octave via la référence de la clef.
-\item \textbf{Durées} (\texttt{duration\_knn.py}, MLRF~L1/L3). \textbf{Descripteur de forme} (histogrammes de
-projection + moments de Hu + géométrie) de la région tête+hampe+ligature, classé au \textbf{$k$ plus proches
-voisins} (ronde/blanche/noire/croche/\dots). Repli géométrique conservé si aucun modèle n'est fourni.
-\item \textbf{Export MIDI} (\texttt{midi.py}). Écriture d'un fichier Standard MIDI pur (hauteur $\rightarrow$
-numéro MIDI, durée $\rightarrow$ tics), sans dépendance externe.
+géodésique), ouverture par un disque (granulométrie), puis filtrage par taille, allongement et remplissage.
+Les têtes des groupes ligaturés sont détectées.
+\item \textbf{Hauteurs} (\texttt{decode.py}). La position verticale de la tête par rapport à la portée (ligne du
+bas et demi-interligne) donne la lettre et l'octave, via la référence de la clef.
+\item \textbf{Durées} (\texttt{duration\_knn.py}, MLRF~L1/L3). Un descripteur de forme (histogrammes de
+projection, moments de Hu, géométrie) de la région tête+hampe+ligature est classé au $k$ plus proches voisins
+(ronde, blanche, noire, croche, \dots). Une règle géométrique sert de repli si aucun modèle n'est fourni.
+\item \textbf{Export MIDI} (\texttt{midi.py}). Écriture d'un fichier Standard MIDI (hauteur vers numéro MIDI,
+durée vers tics), sans dépendance externe.
 \end{enumerate}
-La \textbf{clef} est reconnue par descripteurs + $k$-NN ($99{,}2\,\%$ imprimé, $91{,}7\,\%$ distordu)~;
-l'\textbf{armure} et les \textbf{silences} disposent de méthodes conformes (théorie + $k$-NN de forme) mais leur
-détection automatique reste \textbf{désactivée / opt-in} (cf.~§\ref{sec:limites}).
+La clef est reconnue par descripteurs et $k$-NN ($99{,}2\,\%$ en imprimé, $91{,}7\,\%$ en distordu). L'armure et
+les silences disposent de méthodes (théorie et $k$-NN de forme), mais leur détection automatique est désactivée
+par défaut (voir §\ref{sec:limites}).
 
-\subsection{Décisions et écarts assumés vs état de l'art}
+\subsection{Écarts par rapport à l'état de l'art}
 \begin{itemize}
-\item \textbf{Suppression de portée par ES vertical} (l'état de l'art décrit un ES \emph{horizontal}, qui abîme
-les ligatures --- vérifié)~: reste une ouverture morphologique (TIFO2~§5.3).
-\item \textbf{Durées par $k$-NN} (annoncées géométriques au §5)~: extension de la méthode $k$-NN déjà prévue
-au §4, la géométrie seule s'étant révélée peu fiable à cette résolution ($\sim$3~px de ligature). \emph{Gain majeur.}
-\item \textbf{Détection des têtes}~: les deux options du §4 testées (morphologie vs corrélation de gabarit)~;
-la morphologie gagne nettement (ratio têtes/notes $1{,}07$ vs $2{,}1$) et est retenue.
-\item \textbf{Portées inclinées/courbes}~: \textbf{Hough} et \textbf{chemins stables}~\cite{cardoso2009}
-implémentés et validés sur le déformé (Hough trouve les $5$ lignes dans $99\,\%$ des cas vs $61\,\%$ pour la
-projection)~; la projection reste le défaut sur imprimé droit (plus simple, suffisante).
+\item Suppression de portée par élément structurant vertical~: l'état de l'art décrit un ES horizontal, qui
+abîme les ligatures. On reste sur une ouverture morphologique (TIFO2~§5.3).
+\item Durées par $k$-NN au lieu de la géométrie annoncée au §5~: c'est l'extension aux durées de la méthode
+$k$-NN déjà prévue au §4 pour les autres symboles, la géométrie seule étant peu fiable à cette résolution
+($\sim$3~px de ligature).
+\item Détection des têtes~: les deux options du §4 ont été testées (morphologie et corrélation de gabarit)~; la
+morphologie donne un meilleur ratio têtes/notes ($1{,}07$ contre $2{,}1$) et est retenue.
+\item Portées inclinées ou courbes~: Hough et chemins stables~\cite{cardoso2009} sont implémentés et testés sur
+le déformé (Hough trouve les cinq lignes dans $99\,\%$ des cas contre $61\,\%$ pour la projection). La
+projection reste utilisée par défaut sur l'imprimé droit.
 \end{itemize}
 
 \section{Évaluation}
-Protocole~: critères PA / RA / NA du livrable~2 (alignement par distance d'édition de
-Levenshtein~\cite{levenshtein1966}), sur CameraPrIMuS, $n=800$ incipits, \textbf{split train/test disjoint}
-$70/30$ (le classifieur de durées n'est entraîné que sur \emph{train}, l'évaluation ne porte que sur
-\emph{test} $=240$). Sous-ensembles~: \emph{simple} (sans armure ni notes creuses) et \emph{général} (tout).
-La ligne \emph{armure oracle} ($n=400$) fournit la vérité-terrain de l'armure au décodage~: elle borne le gain
-théorique d'une lecture parfaite des altérations. On situe l'algorithme retenu (\textbf{V2}, durées par
-$k$-NN) par rapport à la \textbf{baseline V1}~: le décodage des durées par \textbf{règles géométriques}
-(tête pleine/vide, hampe, comptage de ligatures et points), c'est-à-dire la méthode décrite dans notre état de
-l'art (§5). V2 n'est donc pas une méthode étrangère mais une \emph{amélioration mesurée} de cette baseline.
+Critères PA / RA / NA du livrable~2 (alignement des séquences par distance d'édition de
+Levenshtein~\cite{levenshtein1966}), sur CameraPrIMuS, $n=800$ incipits, split train/test disjoint $70/30$~: le
+classifieur de durées est entraîné sur \emph{train}, l'évaluation ne porte que sur \emph{test} ($=240$). Deux
+sous-ensembles~: \emph{simple} (sans armure ni notes creuses) et \emph{général} (tout). La ligne \emph{armure
+oracle} ($n=400$) donne au décodage la vraie armure et mesure le gain qu'apporterait sa lecture. On compare la
+version retenue (V2, durées par $k$-NN) à la version géométrique (V1), qui correspond à la méthode décrite au §5
+de l'état de l'art.
 
 \begin{center}\small
 \begin{tabular}{llccccc}
@@ -108,40 +104,36 @@ l'art (§5). V2 n'est donc pas une méthode étrangère mais une \emph{améliora
 Sous-ensemble & Version & $N$ & PA stricte & PA diat. & RA & NA \\
 \midrule
 simple  & V1 (géom., état de l'art §5) & 61  & 75{,}5 & 77{,}1 & 40{,}9 & 38{,}5 \\
-simple  & \textbf{V2 (k-NN, retenu)} & 61  & \textbf{83{,}7} & \textbf{85{,}7} & \textbf{77{,}4} & \textbf{74{,}3} \\
+simple  & V2 (k-NN, retenu) & 61  & 83{,}7 & 85{,}7 & 77{,}4 & 74{,}3 \\
 général & V1 (géom., état de l'art §5) & 240 & 60{,}4 & 76{,}7 & 39{,}4 & 29{,}3 \\
-général & \textbf{V2 (k-NN, retenu)} & 240 & \textbf{66{,}1} & \textbf{83{,}7} & \textbf{71{,}4} & \textbf{56{,}2} \\
-général & V2 + armure oracle & 120 & 82{,}1 & 84{,}3 & 69{,}4 & \textbf{66{,}2} \\
+général & V2 (k-NN, retenu) & 240 & 66{,}1 & 83{,}7 & 71{,}4 & 56{,}2 \\
+général & V2 + armure oracle & 120 & 82{,}1 & 84{,}3 & 69{,}4 & 66{,}2 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Lecture.} Le passage V1~$\rightarrow$~V2 (classifieur de durées $k$-NN) est le gain majeur~: sur les
-notes bien alignées, la précision de durée passe de \textbf{$39\,\%$ à $79\,\%$}, ce qui double
-quasiment la NA générale. La PA monte aussi mécaniquement (des durées correctes améliorent l'alignement par
-distance d'édition). Sur le sous-ensemble \emph{simple}, le décodage est presque parfait (PA diat.\ $85{,}7$).
-L'écart PA stricte / diatonique et la ligne \emph{oracle} chiffrent le \textbf{plafond restant}~: la lecture
-des altérations (armure). Tous les essais intermédiaires, gardés comme abandonnés, sont journalisés avec leurs
-scores dans \texttt{SUIVI.md}.
+De V1 à V2, la précision de durée passe de $39\,\%$ à $79\,\%$ sur les notes bien alignées, et la NA générale de
+$29$ à $56$. La PA augmente aussi, car des durées correctes améliorent l'alignement par distance d'édition. Sur
+le sous-ensemble simple, le décodage est presque exact (PA diat.\ $85{,}7$). L'écart entre PA stricte et PA
+diatonique, et la ligne oracle, mesurent ce que coûte l'armure non lue. Le détail des essais intermédiaires
+(retenus ou abandonnés) et leurs scores sont dans \texttt{SUIVI.md}.
 
-\textbf{Cohérence avec l'état de l'art.} En OMR \emph{classique} (sans réseau), une exactitude note-level de
-$50$--$80\,\%$ sur données réelles est attendue~\cite{rebelo2012,calvo2020}~; seules les approches réseau
-dépassent $\sim$$90\,\%$ sur PrIMuS. Nos chiffres (NA simple $74$, général $56$, PA diat.\ $84$) se situent
-donc dans la fourchette haute du classique.
+En OMR classique (sans réseau), une exactitude note-level de $50$ à $80\,\%$ sur données réelles est
+attendue~\cite{rebelo2012,calvo2020}~; les approches à réseau dépassent $90\,\%$ sur PrIMuS. Nos résultats (NA
+$74$ en simple, $56$ en général, PA diat.\ $84$) se situent dans la partie haute de cette fourchette.
 
 \section{Limites et reproductibilité}\label{sec:limites}
-\textbf{Limites (honnêtes).} (i)~\emph{Armure / altérations} = plafond n\textsuperscript{o}1~: théorie et
-intégration faites (l'oracle le chiffre), mais aucune détection automatique n'atteint une précision
-nette-positive (la suppression de portée fragmente les traits fins $\sim$3~px) $\rightarrow$ laissée OFF pour ne
-pas dégrader la NA. (ii)~\emph{Silences}~: méthode implémentée (candidats + $k$-NN de forme) mais sur-détection
-$\rightarrow$ opt-in. (iii)~\emph{Manuscrit (MUSCIMA++)} et \emph{F1 sur pages polyphoniques (DeepScoresV2)}~:
-hors périmètre --- la chaîne de décodage suppose une portée unique monophonique~; le F1 est rapporté par un
-proxy (ratio têtes/notes $\approx 1{,}07$) faute d'annotations de boîtes dans PrIMuS. Ce sont les vraies limites
-d'un prototype sans réseau.
+\textbf{Limites.} L'armure est la principale limite~: la théorie et l'intégration sont faites (l'oracle en donne
+le gain), mais aucune détection automatique ne dépasse la baseline, car la suppression de portée fragmente les
+traits fins ($\sim$3~px)~; elle est donc désactivée par défaut pour ne pas dégrader la NA. Les silences ont une
+méthode implémentée (candidats et $k$-NN de forme) mais sur-détectée, désactivée par défaut aussi. Le manuscrit
+(MUSCIMA++) et le F1 sur pages polyphoniques (DeepScoresV2) sont hors périmètre~: la chaîne de décodage suppose
+une portée unique monophonique. Le F1 est estimé par un proxy (ratio têtes/notes $\approx 1{,}07$), faute
+d'annotations de boîtes dans PrIMuS.
 
 \textbf{Reproductibilité.} Environnement géré par \texttt{uv}. Tests unitaires~: \texttt{uv run pytest -q}
 ($34$ tests). Tableau ci-dessus~: \texttt{uv run python scripts/benchmark.py -{}-n 800} (V2),
-\texttt{-{}-geom} (V1), \texttt{-{}-key-oracle} (oracle). Démo image~$\rightarrow$~MIDI~:
+\texttt{-{}-geom} (V1), \texttt{-{}-key-oracle} (oracle). Démo image vers MIDI~:
 \texttt{uv run python -m omr.cli -{}-id <incipit>}.
 
 \printbibliography[heading=bibnumbered,title={Références}]
