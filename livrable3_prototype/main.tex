@@ -70,9 +70,9 @@ projection, moments de Hu, géométrie) de la région tête+hampe+ligature est c
 \item \textbf{Export MIDI} (\texttt{midi.py}). Écriture d'un fichier Standard MIDI (hauteur vers numéro MIDI,
 durée vers tics), sans dépendance externe.
 \end{enumerate}
-La clef est reconnue par descripteurs et $k$-NN ($99{,}2\,\%$ en imprimé, $91{,}7\,\%$ en distordu). L'armure et
-les silences disposent de méthodes (théorie et $k$-NN de forme), mais leur détection automatique est désactivée
-par défaut (voir §\ref{sec:limites}).
+La clef est reconnue par descripteurs de forme et $k$-NN ($99{,}2\,\%$ en imprimé, $91{,}7\,\%$ en distordu).
+L'armure et les silences reposent sur la même approche (descripteurs de forme et $k$-NN), mais leur détection
+automatique reste trop peu fiable et est désactivée par défaut (voir §\ref{sec:limites}).
 
 \subsection{Écarts par rapport à l'état de l'art}
 \begin{itemize}
