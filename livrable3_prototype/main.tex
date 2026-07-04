@@ -125,9 +125,10 @@ L'armure est la principale limite~: la théorie et l'intégration sont faites (l
 le gain), mais aucune détection automatique ne dépasse la baseline, car la suppression de portée fragmente les
 traits fins ($\sim$3~px)~; elle est donc désactivée par défaut pour ne pas dégrader la NA. Les silences ont une
 méthode implémentée (candidats et $k$-NN de forme) mais sur-détectée, désactivée par défaut aussi. Le manuscrit
-(MUSCIMA++) et le F1 sur pages polyphoniques (DeepScoresV2) sont hors périmètre~: la chaîne de décodage suppose
-une portée unique monophonique. Le F1 est estimé par un proxy (ratio têtes/notes $\approx 1{,}07$), faute
-d'annotations de boîtes dans PrIMuS.
+(MUSCIMA++) et les pages polyphoniques (DeepScoresV2) sont hors périmètre~: la chaîne de décodage suppose une
+portée unique monophonique. Enfin, le troisième critère du livrable~2, le F1 de détection des têtes, n'est pas
+mesuré~: PrIMuS ne donne pas les boîtes des symboles, seulement la séquence de notes. On vérifie seulement que
+le nombre de têtes détectées est proche du nombre de notes réelles (rapport $\approx 1{,}07$, idéal $1{,}0$).
 
 \printbibliography[heading=bibnumbered,title={Références}]
 
