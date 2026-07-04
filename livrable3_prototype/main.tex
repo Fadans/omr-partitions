@@ -120,19 +120,14 @@ En OMR classique (sans réseau), une exactitude note-level de $50$ à $80\,\%$ s
 attendue~\cite{rebelo2012,calvo2020}~; les approches à réseau dépassent $90\,\%$ sur PrIMuS. Nos résultats (NA
 $74$ en simple, $56$ en général, PA diat.\ $84$) se situent dans la partie haute de cette fourchette.
 
-\section{Limites et reproductibilité}\label{sec:limites}
-\textbf{Limites.} L'armure est la principale limite~: la théorie et l'intégration sont faites (l'oracle en donne
+\section{Limites}\label{sec:limites}
+L'armure est la principale limite~: la théorie et l'intégration sont faites (l'oracle en donne
 le gain), mais aucune détection automatique ne dépasse la baseline, car la suppression de portée fragmente les
 traits fins ($\sim$3~px)~; elle est donc désactivée par défaut pour ne pas dégrader la NA. Les silences ont une
 méthode implémentée (candidats et $k$-NN de forme) mais sur-détectée, désactivée par défaut aussi. Le manuscrit
 (MUSCIMA++) et le F1 sur pages polyphoniques (DeepScoresV2) sont hors périmètre~: la chaîne de décodage suppose
 une portée unique monophonique. Le F1 est estimé par un proxy (ratio têtes/notes $\approx 1{,}07$), faute
 d'annotations de boîtes dans PrIMuS.
-
-\textbf{Reproductibilité.} Environnement géré par \texttt{uv}. Tests unitaires~: \texttt{uv run pytest -q}
-($34$ tests). Tableau ci-dessus~: \texttt{uv run python scripts/benchmark.py -{}-n 800} (V2),
-\texttt{-{}-geom} (V1), \texttt{-{}-key-oracle} (oracle). Démo image vers MIDI~:
-\texttt{uv run python -m omr.cli -{}-id <incipit>}.
 
 \printbibliography[heading=bibnumbered,title={Références}]
 
