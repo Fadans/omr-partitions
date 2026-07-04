@@ -3,44 +3,15 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 
-import numpy as np
-
 from omr.dataset import clean_heads, prepared
-from omr.decode import beam_mask
-from omr.descriptors import projection_features, hu_moments
 from omr.heads import detect_heads
-from omr.io_primus import list_samples, parse_semantic
+from omr.io_primus import list_samples
 from omr.knn import NearestNeighbor
+from omr.rest_knn import _base as base, _mid_rest_tokens as mid_rest_tokens, rest_descriptor
 from omr.rests import detect_rests
 from omr.staff import staff_line_rows
 
 REST_DURS = ["whole", "half", "quarter", "eighth", "sixteenth", "none"]
-
-
-def base(d):
-    return d.split(".")[0]
-
-
-def rest_descriptor(nostaff, c, metrics, s_top, s_bot):
-    u = metrics.staff_unit
-    crop = nostaff[c.y1:c.y2, c.x1:c.x2]
-    fill = crop.sum() / max(1, crop.size)
-    cy = (c.y1 + c.y2) / 2
-    rel = (cy - s_top) / max(1.0, (s_bot - s_top))  # position verticale relative
-    return np.concatenate([
-        projection_features(crop, bins=12),
-        hu_moments(crop),
-        [c.width / u, c.height / u, fill, c.width / max(1, c.height), rel],
-    ])
-
-
-def mid_rest_tokens(toks):
-    types = [t.split("-")[0] for t in toks]
-    idx = [i for i, t in enumerate(types) if t in ("note", "gracenote")]
-    if not idx:
-        return []
-    lo, hi = idx[0], idx[-1]
-    return [toks[i] for i in range(lo, hi) if types[i] == "rest"]
 
 
 def collect(samples):

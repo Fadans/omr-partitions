@@ -3,45 +3,14 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 
-import numpy as np
-
 from omr.dataset import prepared
-from omr.decode import (_count_beams, _find_stem, beam_mask, clean_heads,
-                        head_duration)
-from omr.descriptors import projection_features
+from omr.decode import beam_mask, clean_heads, head_duration
+from omr.duration_knn import base_duration as base_dur, region_descriptor
 from omr.heads import detect_heads
 from omr.io_primus import list_samples, parse_semantic
 from omr.knn import NearestNeighbor
 
 DURS = ["whole", "half", "quarter", "eighth", "sixteenth", "thirty_second"]
-
-
-def base_dur(d: str) -> str:
-    return d.split(".")[0]
-
-
-def region_descriptor(nostaff, bmask, head, metrics):
-    u = metrics.staff_unit
-    stem = _find_stem(nostaff, head, metrics)
-    crop_head = nostaff[head.y1:head.y2, head.x1:head.x2]
-    hollow = crop_head.sum() / max(1, crop_head.size) < 0.55
-    h, w = nostaff.shape
-    if stem is not None:
-        sx, top, bot = stem
-        x0 = max(0, int(sx - 1.6 * u)); x1 = min(w, int(sx + 1.6 * u))
-        y0 = max(0, int(top - 0.3 * u)); y1 = min(h, int(bot + 0.3 * u))
-        stem_len = (bot - top) / u
-        nb = _count_beams(bmask, head, stem, metrics)
-    else:
-        x0, y0, x1, y1 = head.x1, head.y1, head.x2, head.y2
-        stem_len = 0.0
-        nb = 0
-    crop = nostaff[y0:y1, x0:x1]
-    ch, cw = max(1, y1 - y0), max(1, x1 - x0)
-    fill = crop.sum() / (ch * cw)
-    aspect = cw / ch
-    pf = projection_features(crop, bins=16)
-    return np.concatenate([pf, [float(hollow), stem_len, fill, aspect, float(nb)]])
 
 
 def collect(samples):

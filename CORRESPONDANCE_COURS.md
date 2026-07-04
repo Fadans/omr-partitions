@@ -11,7 +11,6 @@ Le prototype mobilise **uniquement des notions vues en TIFO 1, TIFO 2 et MLRF**
 | `preprocess` (gris) | Conversion RGB → niveaux de gris | TIFO1 ch3 §2.3 |
 | `staff.estimate_metrics` | Longueurs de runs (épaisseur/interligne) | TIFO1 ch3 §3 ; état de l'art |
 | `staff.staff_line_rows` | Projection / histogramme de lignes | TIFO1 ch4 ; état de l'art |
-| `staff.staff_lines_mask` | Ouverture morphologique (ES horizontal) | TIFO2 §5.3 |
 | `staff.remove_staff_lines` | **Ouverture morphologique** (ES vertical : garde les structures plus hautes que l'épaisseur d'une ligne ⇒ enlève les lignes, garde têtes/hampes/ligatures) | TIFO2 §5.3 |
 | `staff.remove_staff_lines_combined` | Union ouverture morphologique + suppression « pont » (conserve les pixels où un symbole traverse la ligne) ⇒ préserve aussi les contours fins (têtes creuses, altérations) | TIFO2 §5.3, connexité |
 | `morph` (erode/dilate/opening/closing) | Les 4 opérateurs morphologiques fondamentaux | TIFO2 §5 |

@@ -27,9 +27,11 @@ métriques du WP1. NumPy + Pillow uniquement, pour faciliter le portage C++ (WP3
 7. `decode.py` — position → hauteur (clef), forme → durée → séquence. ✅
 8. `midi.py` — export Standard MIDI File (pur Python). ✅
 
-Reconnaissance de clef : 99 % (propre) / 92 % (distordu). Décodage des hauteurs :
-PA diatonique ~74 % (médiane 85 %) sur l'imprimé. Voir `SUIVI.md` (détails,
-résultats, limites) et `CORRESPONDANCE_COURS.md` (notions de cours mobilisées).
+Résultats finaux (test disjoint, n=800) : Note Accuracy **74 %** (sous-ensemble
+simple) / **56 %** (général), PA diatonique 84 %, RA 71 % ; clef reconnue à
+99 % (propre) / 92 % (distordu). Voir `BILAN_WP2.md` (bilan V1/V2, décisions,
+limites), `SUIVI.md` (journal des essais) et `CORRESPONDANCE_COURS.md`
+(notions de cours mobilisées).
 
 ## Utilisation
 

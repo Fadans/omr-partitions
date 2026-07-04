@@ -100,11 +100,6 @@ def staff_lines_hough(mask: np.ndarray, angle_range_deg: float = 6.0,
     return deg, rows
 
 
-def staff_lines_mask(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
-    length = max(3, 2 * metrics.line_space)
-    return opening(mask, rect(1, length))
-
-
 def remove_staff_lines(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
     height = 2 * metrics.line_height + 1
     return opening(mask, rect(height, 1))
@@ -136,27 +131,6 @@ def remove_staff_lines_bridge(mask: np.ndarray, metrics: StaffMetrics,
         bridged = above & below
         cols = band.any(axis=0) & ~bridged
         out[r0:r1, cols] = False
-    return out
-
-
-def remove_staff_lines_targeted(mask: np.ndarray, metrics: StaffMetrics,
-                                rows: list[int] | None = None) -> np.ndarray:
-    if rows is None:
-        rows = staff_line_rows(mask)
-    if len(rows) < 2:
-        return remove_staff_lines(mask, metrics)
-    out = mask.copy()
-    tol = max(metrics.line_height, round(0.4 * metrics.line_space))
-    max_run = 2 * metrics.line_height
-    rows_arr = np.array(rows)
-    h, w = mask.shape
-    for x in range(w):
-        starts, lengths, values = _column_runs(mask[:, x])
-        for s, ln, val in zip(starts, lengths, values):
-            if val and ln <= max_run:
-                cy = s + ln / 2
-                if np.abs(rows_arr - cy).min() <= tol:
-                    out[s:s + ln, x] = False
     return out
 
 
@@ -216,16 +190,4 @@ def remove_staff_lines_stable_paths(mask: np.ndarray, metrics: StaffMetrics,
                 bot += 1
             if bot - top + 1 <= max_run:  # trait fin = ligne ; sinon symbole -> pont
                 out[top:bot + 1, c] = False
-    return out
-
-
-def remove_staff_lines_runlength(mask: np.ndarray, metrics: StaffMetrics) -> np.ndarray:
-    out = mask.copy()
-    threshold = 2 * metrics.line_height
-    h, w = mask.shape
-    for x in range(w):
-        starts, lengths, values = _column_runs(mask[:, x])
-        for s, ln, val in zip(starts, lengths, values):
-            if val and ln <= threshold:
-                out[s:s + ln, x] = False
     return out

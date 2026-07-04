@@ -86,8 +86,9 @@ au WP3, et conforme à l'esprit TIFO). Environnement géré par **uv**.
 - `remove_staff_lines(mask, metrics)` : **ouverture morphologique à ES vertical**
   (TIFO2 §5.3) — garde les structures plus hautes que l'épaisseur d'une ligne →
   enlève les lignes tout en gardant hampes, têtes et **ligatures**.
-  `remove_staff_lines_runlength` : variante par runs verticaux (identique).
-  `staff_lines_mask` : isole les lignes par ouverture à ES horizontal.
+  `remove_staff_lines_runlength` (variante par runs, identique) et
+  `staff_lines_mask` (isolation des lignes) : testées puis retirées du code
+  (redondantes / inutilisées).
 - `remove_staff_lines_bridge` : n'efface une ligne **que là où aucun symbole ne
   la traverse** (pixels « pont » conservés si encre au-dessus ET au-dessous) →
   préserve les contours fins (têtes creuses, altérations) mais abîme les
@@ -226,7 +227,9 @@ pleine/vide, hampe, ligatures) ; on **étend** donc la méthode k-NN déjà pré
 peu fiable. Ce n'est pas une méthode étrangère au projet, mais celle déjà
 retenue, appliquée à une catégorie de plus.
 Sur le même jeu de test (notes bien alignées) la précision de durée passe de
-**39 % → 79 %** ; bout-en-bout **RA 35 → 69**, **NA 26 → 51** (doublée).
+**39 % → 79 %** (`scripts/duration_experiment.py`, matrices de confusion géo vs
+k-NN) ; bout-en-bout **RA 35 → 69**, **NA 26 → 51** (doublée)
+(`scripts/benchmark_duration.py`, comparaison géo/k-NN à conditions égales).
 La PA monte aussi (56 → 64) : des durées correctes améliorent l'alignement par
 distance d'édition. Un masque de ligatures par **ouverture morphologique
 horizontale** (`decode.beam_mask`, TIFO2 §5.3) fournit un descripteur robuste.
