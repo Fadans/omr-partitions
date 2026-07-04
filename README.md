@@ -39,7 +39,7 @@ fonctionnement, pas la reproduction du tableau du livrable.
 ## Base complète
 
 Pour reproduire les chiffres du livrable, placer la base CameraPrIMuS dans
-`base_1/Corpus/` (non versionnée) et lancer :
+`base_1/Corpus/` et lancer :
 
 ```sh
 uv run python scripts/benchmark.py --n 800               # durées k-NN (version retenue)
