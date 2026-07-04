@@ -47,8 +47,7 @@ pas traités~: ils sortent du périmètre de ce prototype (voir §\ref{sec:limit
 Pillow, pour faciliter le portage C++ du WP3.
 
 \section{Chaîne de traitement}
-L'image suit une chaîne classique~\cite{rebelo2012}. Chaque étape correspond à une notion de cours (traçabilité
-dans \texttt{CORRESPONDANCE\_COURS.md}).
+L'image suit une chaîne classique~\cite{rebelo2012}. Chaque étape correspond à une notion vue en cours.
 \begin{enumerate}
 \item \textbf{Prétraitement} (\texttt{preprocess.py}, TIFO~1). Conversion en niveaux de gris, filtre médian pour
 le bruit, puis binarisation par le critère d'Otsu~\cite{otsu1979} (imprimé) ou par seuil adaptatif calculé sur
@@ -115,8 +114,7 @@ général & V2 + armure oracle & 120 & 82{,}1 & 84{,}3 & 69{,}4 & 66{,}2 \\
 De V1 à V2, la précision de durée passe de $39\,\%$ à $79\,\%$ sur les notes bien alignées, et la NA générale de
 $29$ à $56$. La PA augmente aussi, car des durées correctes améliorent l'alignement par distance d'édition. Sur
 le sous-ensemble simple, le décodage est presque exact (PA diat.\ $85{,}7$). L'écart entre PA stricte et PA
-diatonique, et la ligne oracle, mesurent ce que coûte l'armure non lue. Le détail des essais intermédiaires
-(retenus ou abandonnés) et leurs scores sont dans \texttt{SUIVI.md}.
+diatonique, et la ligne oracle, mesurent ce que coûte l'armure non lue.
 
 En OMR classique (sans réseau), une exactitude note-level de $50$ à $80\,\%$ sur données réelles est
 attendue~\cite{rebelo2012,calvo2020}~; les approches à réseau dépassent $90\,\%$ sur PrIMuS. Nos résultats (NA
