@@ -3,6 +3,7 @@
 
 #include "image.hpp"
 #include "preprocess.hpp"
+#include "segment.hpp"
 #include "staff.hpp"
 
 // Squelette temporaire : chaque module ajoute son étape au fur et à mesure
@@ -26,5 +27,9 @@ int main(int argc, char** argv) {
     for (uint8_t v : nostaff.data) nsum += v;
     std::printf("line_height=%d line_space=%d n_rows=%zu nostaff_sum=%lld\n", metrics.line_height,
                 metrics.line_space, rows.size(), nsum);
+
+    std::vector<omr::Component> comps =
+        omr::segment(nostaff, metrics.line_height * metrics.line_space);
+    std::printf("n_comps=%zu\n", comps.size());
     return 0;
 }
