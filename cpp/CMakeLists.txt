@@ -17,6 +17,7 @@ add_library(omr_core
   src/heads.cpp
   src/descriptors.cpp
   src/knn.cpp
+  src/decode.cpp
 )
 
 target_include_directories(omr_core PUBLIC src third_party)

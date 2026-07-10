@@ -14,4 +14,18 @@ inline long long py_round(double x) {
     return (fl % 2 == 0) ? fl : fl + 1;
 }
 
+// % et // de Python : reste et division de signe celui du diviseur (floor).
+inline int py_mod(int a, int b) {
+    int r = a % b;
+    if (r != 0 && ((r < 0) != (b < 0))) r += b;
+    return r;
+}
+
+inline int py_floordiv(int a, int b) {
+    int q = a / b;
+    int r = a % b;
+    if (r != 0 && ((r < 0) != (b < 0))) q -= 1;
+    return q;
+}
+
 }  // namespace omr
