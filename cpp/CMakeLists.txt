@@ -11,6 +11,8 @@ endif()
 add_library(omr_core
   src/image.cpp
   src/preprocess.cpp
+  src/morph.cpp
+  src/staff.cpp
 )
 
 target_include_directories(omr_core PUBLIC src third_party)
