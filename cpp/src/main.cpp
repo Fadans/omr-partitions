@@ -2,6 +2,7 @@
 #include <string>
 
 #include "image.hpp"
+#include "heads.hpp"
 #include "preprocess.hpp"
 #include "segment.hpp"
 #include "staff.hpp"
@@ -31,5 +32,11 @@ int main(int argc, char** argv) {
     std::vector<omr::Component> comps =
         omr::segment(nostaff, metrics.line_height * metrics.line_space);
     std::printf("n_comps=%zu\n", comps.size());
+
+    std::vector<omr::Component> heads = omr::detect_heads(nostaff, metrics);
+    std::printf("n_heads=%zu\n", heads.size());
+    for (const auto& hd : heads) {
+        std::printf("%d %d %d %d %d\n", hd.x1, hd.y1, hd.x2, hd.y2, hd.area);
+    }
     return 0;
 }

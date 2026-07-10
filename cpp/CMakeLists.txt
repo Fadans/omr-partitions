@@ -14,6 +14,7 @@ add_library(omr_core
   src/morph.cpp
   src/staff.cpp
   src/segment.cpp
+  src/heads.cpp
 )
 
 target_include_directories(omr_core PUBLIC src third_party)
