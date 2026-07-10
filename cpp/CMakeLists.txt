@@ -20,6 +20,7 @@ add_library(omr_core
   src/decode.cpp
   src/npy.cpp
   src/duration_knn.cpp
+  src/midi.cpp
 )
 
 target_include_directories(omr_core PUBLIC src third_party)
