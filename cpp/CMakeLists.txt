@@ -15,6 +15,8 @@ add_library(omr_core
   src/staff.cpp
   src/segment.cpp
   src/heads.cpp
+  src/descriptors.cpp
+  src/knn.cpp
 )
 
 target_include_directories(omr_core PUBLIC src third_party)
