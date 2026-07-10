@@ -1,0 +1,32 @@
+# CI du prototype OMR : lance les tests unitaires à chaque push,
+# et publie une page de présentation via GitLab Pages.
+
+stages:
+  - test
+  - deploy
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+# --- Tests unitaires (pytest via uv) ---
+tests:
+  stage: test
+  image: python:3.12-slim
+  before_script:
+    - pip install uv
+  script:
+    - uv sync --extra dev
+    - uv run pytest -q
+
+# --- GitLab Pages : publie public/ ---
+pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - mkdir -p public
+    - cp pages/index.html public/index.html
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'

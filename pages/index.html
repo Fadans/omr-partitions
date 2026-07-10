@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OMR — Analyse automatique de partitions</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; max-width: 820px; margin: 2rem auto;
+         padding: 0 1rem; line-height: 1.5; }
+  h1 { font-size: 1.6rem; margin-bottom: 0.2rem; }
+  .sub { color: #666; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.95rem; }
+  th, td { border: 1px solid #ccc; padding: 0.35rem 0.6rem; text-align: center; }
+  th:first-child, td:first-child { text-align: left; }
+  code { background: rgba(128,128,128,0.15); padding: 0.1rem 0.3rem; border-radius: 3px; }
+  .best { font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Analyse automatique de partitions musicales (OMR)</h1>
+<p class="sub">SAE TIFO 1 / TIFO 2 / MLRF — Thibault Bourdoiseau &amp; Léo Li</p>
+
+<p>Prototype qui transforme l'image d'une partition monophonique en une séquence
+de notes (hauteur et durée) exportée en MIDI, avec les notions vues en cours et
+sans réseau de neurones. Base : CameraPrIMuS.</p>
+
+<h2>Chaîne de traitement</h2>
+<p>Prétraitement (Otsu / adaptatif) → suppression des portées (morphologie) →
+segmentation (composantes connexes) → détection des têtes (granulométrie) →
+décodage des hauteurs (géométrie de portée) et des durées (descripteurs + k-NN)
+→ export MIDI.</p>
+
+<h2>Résultats (CameraPrIMuS, n=800, test disjoint)</h2>
+<table>
+  <tr><th>Sous-ensemble</th><th>Version</th><th>PA stricte</th><th>PA diat.</th><th>RA</th><th>NA</th></tr>
+  <tr><td>simple</td><td>V1 (géométrique)</td><td>75,5</td><td>77,1</td><td>40,9</td><td>38,5</td></tr>
+  <tr class="best"><td>simple</td><td>V2 (k-NN)</td><td>83,7</td><td>85,7</td><td>77,4</td><td>74,3</td></tr>
+  <tr><td>général</td><td>V1 (géométrique)</td><td>60,4</td><td>76,7</td><td>39,4</td><td>29,3</td></tr>
+  <tr class="best"><td>général</td><td>V2 (k-NN)</td><td>66,1</td><td>83,7</td><td>71,4</td><td>56,2</td></tr>
+  <tr><td>général</td><td>V2 + armure oracle</td><td>82,1</td><td>84,3</td><td>69,4</td><td>66,2</td></tr>
+</table>
+<p>PA = précision des hauteurs, RA = des durées, NA = note complète (hauteur et
+durée). Valeurs en %.</p>
+
+<h2>Lancer le prototype</h2>
+<pre><code>uv sync --extra dev
+uv run pytest -q
+uv run python scripts/benchmark.py --corpus sample_corpus --n 50</code></pre>
+
+</body>
+</html>
